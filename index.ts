@@ -34,7 +34,7 @@ const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
 const HOME_PI = join(homedir(), ".pi", "agent");
 const CACHE_DIR = join(HOME_PI, "cache");
 const CACHE_FILE = join(CACHE_DIR, "tokenrouter-models.json");
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
 const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_TOKENS = 4_096;
