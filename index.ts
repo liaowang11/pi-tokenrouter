@@ -5,28 +5,32 @@
  * Dynamically fetches available models from the /v1/models endpoint with
  * file-based caching to avoid redundant API calls on startup.
  *
- * Authentication (in order of priority):
- *   1. /login tokenrouter          — stores key in ~/.pi/agent/auth.json
- *   2. TOKENROUTER_API_KEY env var — for headless / CI usage
+ * Authentication (resolved via AuthStorage with full priority chain):
+ *   1. Runtime overrides (CLI --api-key)
+ *   2. API key from auth.json (literal, env var name, or shell command)
+ *   3. OAuth token from auth.json (from /login tokenrouter)
+ *   4. TOKENROUTER_API_KEY environment variable
  *
  * Usage:
  *   pi -e /path/to/pi-tokenrouter
- *   /login tokenrouter
- *   # paste your API key when prompted
+ *   /login tokenrouter          # stores key in auth.json
+ *   # OR add to ~/.pi/agent/auth.json:
+ *   #   "tokenrouter": { "type": "api_key", "key": "sk-..." }
+ *   #   "tokenrouter": { "type": "api_key", "key": "TOKENROUTER_API_KEY" }
+ *   #   "tokenrouter": { "type": "api_key", "key": "!op read 'op://vault/item/key'" }
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@mariozechner/pi-ai";
+import { AuthStorage } from "@mariozechner/pi-coding-agent";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 const BASE_URL = "https://api.tokenrouter.com/v1";
-const API_KEY_ENV = "TOKENROUTER_API_KEY";
 const PROVIDER_NAME = "tokenrouter";
 
 const HOME_PI = join(homedir(), ".pi", "agent");
-const AUTH_FILE = join(HOME_PI, "auth.json");
 const CACHE_DIR = join(HOME_PI, "cache");
 const CACHE_FILE = join(CACHE_DIR, "tokenrouter-models.json");
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -66,36 +70,6 @@ function isReasoningModel(id: string): boolean {
 
 function supportsVision(id: string): boolean {
 	return VISION_PATTERNS.some((p) => p.test(id));
-}
-
-// ---------------------------------------------------------------------------
-// Auth resolution
-// ---------------------------------------------------------------------------
-
-function readStoredApiKey(): string | undefined {
-	try {
-		if (!existsSync(AUTH_FILE)) return undefined;
-		const auth = JSON.parse(readFileSync(AUTH_FILE, "utf-8")) as Record<string, unknown>;
-		const entry = auth[PROVIDER_NAME] as Record<string, unknown> | undefined;
-		if (!entry) return undefined;
-
-		// OAuth-style credentials (stored by our /login flow)
-		if (entry.type === "oauth" && typeof entry.access === "string") {
-			return entry.access;
-		}
-
-		// Simple API key entries
-		if (entry.type === "api_key" && typeof entry.key === "string") {
-			return entry.key;
-		}
-	} catch {
-		// auth.json read failure is non-fatal
-	}
-	return undefined;
-}
-
-function resolveApiKey(): string | undefined {
-	return process.env[API_KEY_ENV] || readStoredApiKey();
 }
 
 // ---------------------------------------------------------------------------
@@ -185,13 +159,13 @@ async function getModels(apiKey: string): Promise<RawModel[]> {
 		}
 		throw new Error(
 			"Failed to fetch models from TokenRouter and no cached data available. " +
-			"Set TOKENROUTER_API_KEY or run /login tokenrouter.",
+			"Configure authentication via /login tokenrouter, auth.json, or TOKENROUTER_API_KEY.",
 		);
 	}
 }
 
 // ---------------------------------------------------------------------------
-// OAuth (API key prompt flow)
+// OAuth (API key prompt flow for /login)
 // ---------------------------------------------------------------------------
 
 async function loginTokenRouter(callbacks: OAuthLoginCallbacks): Promise<OAuthCredentials> {
@@ -217,22 +191,27 @@ async function refreshTokenRouter(credentials: OAuthCredentials): Promise<OAuthC
 // Extension entry point
 // ---------------------------------------------------------------------------
 
+const oauth = {
+	name: "TokenRouter",
+	login: loginTokenRouter,
+	refreshToken: refreshTokenRouter,
+	getApiKey: (cred: OAuthCredentials) => cred.access,
+};
+
 export default async function (pi: ExtensionAPI) {
-	const apiKey = resolveApiKey();
+	// Resolve API key through AuthStorage with full priority chain:
+	// runtime overrides → auth.json api_key → auth.json oauth → env vars
+	const authStorage = AuthStorage.create();
+	const apiKey = await authStorage.getApiKey(PROVIDER_NAME);
+
 	if (!apiKey) {
-		// Register provider with OAuth only (no models yet) so /login works.
+		// Register provider with OAuth only (no models) so /login works.
 		// After /login, user needs /reload to fetch and register models.
 		pi.registerProvider(PROVIDER_NAME, {
 			baseUrl: BASE_URL,
-			apiKey: API_KEY_ENV,
 			api: "openai-completions",
 			authHeader: true,
-			oauth: {
-				name: "TokenRouter",
-				login: loginTokenRouter,
-				refreshToken: refreshTokenRouter,
-				getApiKey: (cred) => cred.access,
-			},
+			oauth,
 		});
 		return;
 	}
@@ -241,7 +220,6 @@ export default async function (pi: ExtensionAPI) {
 
 	pi.registerProvider(PROVIDER_NAME, {
 		baseUrl: BASE_URL,
-		apiKey: API_KEY_ENV,
 		api: "openai-completions",
 		authHeader: true,
 		models: rawModels.map((m) => ({
@@ -253,11 +231,6 @@ export default async function (pi: ExtensionAPI) {
 			contextWindow: m.context_window ?? DEFAULT_CONTEXT_WINDOW,
 			maxTokens: m.max_tokens ?? DEFAULT_MAX_TOKENS,
 		})),
-		oauth: {
-			name: "TokenRouter",
-			login: loginTokenRouter,
-			refreshToken: refreshTokenRouter,
-			getApiKey: (cred) => cred.access,
-		},
+		oauth,
 	});
 }
