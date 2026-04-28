@@ -1,6 +1,6 @@
 {
   "name": "pi-tokenrouter",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "TokenRouter provider extension for pi — dynamic model discovery with OpenRouter-compatible pricing",
   "type": "module",
   "license": "MIT",
