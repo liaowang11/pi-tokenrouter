@@ -1,11 +1,11 @@
 import type { TokenRouterProviderModel } from "./provider-config.js";
 
 // Derived from TokenRouter /v1/models and enriched with models.dev, then OpenRouter metadata.
-// Generated on 2026-05-07T03:18:45.215Z.
+// Generated on 2026-05-23T05:45:11.536Z.
 export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "claude-haiku-4-5",
-        "name": "Claude Haiku 4.5 (latest)",
+        "name": "claude-haiku-4-5",
         "reasoning": true,
         "input": [
             "text",
@@ -14,10 +14,27 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "cost": {
             "input": 1,
             "output": 5,
-            "cacheRead": 0.1,
-            "cacheWrite": 1.25
+            "cacheRead": 0,
+            "cacheWrite": 0
         },
         "contextWindow": 200000,
+        "maxTokens": 64000
+    },
+    {
+        "id": "google/gemini-3.5-flash",
+        "name": "Gemini 3.5 Flash",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 1.5,
+            "output": 9,
+            "cacheRead": 0.15,
+            "cacheWrite": 0.08333333333333334
+        },
+        "contextWindow": 1000000,
         "maxTokens": 64000
     },
     {
@@ -71,6 +88,22 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 131100
     },
     {
+        "id": "qwen/qwen3.7-max",
+        "name": "Qwen3.7 Max",
+        "reasoning": true,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 2.5,
+            "output": 7.5,
+            "cacheRead": 0,
+            "cacheWrite": 3.125
+        },
+        "contextWindow": 1000000,
+        "maxTokens": 65536
+    },
+    {
         "id": "deepseek/deepseek-v4-pro",
         "name": "DeepSeek V4 Pro",
         "reasoning": true,
@@ -87,21 +120,36 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 384000
     },
     {
-        "id": "minimax/minimax-m2.7",
-        "name": "Minimax M2.7",
-        "reasoning": true,
+        "id": "miromind/mirothinker-1-7-deepresearch-mini",
+        "name": "miromind/mirothinker-1-7-deepresearch-mini",
+        "reasoning": false,
         "input": [
-            "text",
-            "image"
+            "text"
         ],
         "cost": {
-            "input": 0.3,
-            "output": 1.2,
-            "cacheRead": 0.06,
-            "cacheWrite": 0.375
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
         },
-        "contextWindow": 204800,
-        "maxTokens": 131000
+        "contextWindow": 4096,
+        "maxTokens": 4096
+    },
+    {
+        "id": "miromind/mirothinker-1-7-deepresearch",
+        "name": "miromind/mirothinker-1-7-deepresearch",
+        "reasoning": false,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 4096,
+        "maxTokens": 4096
     },
     {
         "id": "qwen/qwen3.5-122b-a10b",
@@ -121,6 +169,40 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 262144
     },
     {
+        "id": "minimax/minimax-m2.7",
+        "name": "Minimax M2.7",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.06,
+            "cacheWrite": 0.375
+        },
+        "contextWindow": 204800,
+        "maxTokens": 131000
+    },
+    {
+        "id": "qwen/qwen3.5-plus-02-15",
+        "name": "Qwen3.5 Plus 2026-02-15",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 0.26,
+            "output": 1.56,
+            "cacheRead": 0,
+            "cacheWrite": 0.325
+        },
+        "contextWindow": 1000000,
+        "maxTokens": 65536
+    },
+    {
         "id": "xiaomi/mimo-v2.5",
         "name": "MiMo M2.5",
         "reasoning": true,
@@ -138,54 +220,20 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 131100
     },
     {
-        "id": "qwen/qwen3.5-plus-02-15",
-        "name": "Qwen: Qwen3.5 Plus 2026-02-15",
-        "reasoning": true,
-        "input": [
-            "text",
-            "image"
-        ],
-        "cost": {
-            "input": 0.26,
-            "output": 1.56,
-            "cacheRead": 0,
-            "cacheWrite": 0.325
-        },
-        "contextWindow": 1000000,
-        "maxTokens": 65536
-    },
-    {
         "id": "x-ai/grok-4.20-beta",
-        "name": "Grok 4.20 Beta",
-        "reasoning": true,
-        "input": [
-            "text",
-            "image"
-        ],
-        "cost": {
-            "input": 2,
-            "output": 6,
-            "cacheRead": 0.2,
-            "cacheWrite": 0
-        },
-        "contextWindow": 2000000,
-        "maxTokens": 30000
-    },
-    {
-        "id": "deepseek/deepseek-v3.2",
-        "name": "DeepSeek V3.2",
-        "reasoning": true,
+        "name": "x-ai/grok-4.20-beta",
+        "reasoning": false,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.27,
-            "output": 0.4,
-            "cacheRead": 0.22,
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 163842,
-        "maxTokens": 8000
+        "contextWindow": 4096,
+        "maxTokens": 4096
     },
     {
         "id": "openai/gpt-5.2",
@@ -205,6 +253,39 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 128000
     },
     {
+        "id": "deepseek/deepseek-v3.2",
+        "name": "DeepSeek V3.2",
+        "reasoning": true,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0.27,
+            "output": 0.4,
+            "cacheRead": 0.22,
+            "cacheWrite": 0
+        },
+        "contextWindow": 163842,
+        "maxTokens": 8000
+    },
+    {
+        "id": "qwen/qwen3.5-35b-a3b",
+        "name": "Qwen3.5 35B A3B",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 0.25,
+            "output": 1.3,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 262144,
+        "maxTokens": 262144
+    },
+    {
         "id": "anthropic/claude-opus-4.7",
         "name": "Claude Opus 4.7",
         "reasoning": true,
@@ -220,23 +301,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 1000000,
         "maxTokens": 128000
-    },
-    {
-        "id": "qwen/qwen3.5-35b-a3b",
-        "name": "Qwen3.5 35B A3B",
-        "reasoning": true,
-        "input": [
-            "text",
-            "image"
-        ],
-        "cost": {
-            "input": 0.25,
-            "output": 1.3,
-            "cacheRead": 0.049999999999999996,
-            "cacheWrite": 0
-        },
-        "contextWindow": 262144,
-        "maxTokens": 262144
     },
     {
         "id": "anthropic/claude-sonnet-4.5",
@@ -257,7 +321,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "stepfun/step-3.5-flash",
-        "name": "StepFun: Step 3.5 Flash",
+        "name": "Step 3.5 Flash",
         "reasoning": true,
         "input": [
             "text"
@@ -269,11 +333,11 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheWrite": 0
         },
         "contextWindow": 256000,
-        "maxTokens": 256000
+        "maxTokens": 64000
     },
     {
         "id": "google/gemini-3-flash-preview",
-        "name": "Gemini 3 Flash",
+        "name": "Gemini 3 Flash Preview",
         "reasoning": true,
         "input": [
             "text",
@@ -283,26 +347,26 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "input": 0.5,
             "output": 3,
             "cacheRead": 0.05,
-            "cacheWrite": 1
+            "cacheWrite": 0.08333333333333334
         },
         "contextWindow": 1048576,
         "maxTokens": 65536
     },
     {
         "id": "z-ai/glm-5-turbo",
-        "name": "Z.ai: GLM 5 Turbo",
+        "name": "GLM 5 Turbo",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 1.2,
-            "output": 4,
+            "input": 0.88,
+            "output": 3.48,
             "cacheRead": 0.24,
             "cacheWrite": 0
         },
-        "contextWindow": 202752,
-        "maxTokens": 131072
+        "contextWindow": 200000,
+        "maxTokens": 128000
     },
     {
         "id": "openai/gpt-5.4-pro",
@@ -323,20 +387,20 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "qwen/qwen3.5-397b-a17b",
-        "name": "Qwen3.5-397B-A17B",
+        "name": "Qwen3.5 397B A17B",
         "reasoning": true,
         "input": [
             "text",
             "image"
         ],
         "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0.195,
+            "input": 0.6,
+            "output": 3.6,
+            "cacheRead": 0,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
-        "maxTokens": 8192
+        "maxTokens": 262144
     },
     {
         "id": "anthropic/claude-opus-4.5",
@@ -357,7 +421,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "mistralai/devstral-2512",
-        "name": "Mistral: Devstral 2 2512",
+        "name": "Devstral 2",
         "reasoning": false,
         "input": [
             "text"
@@ -365,11 +429,11 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "cost": {
             "input": 0.4,
             "output": 2,
-            "cacheRead": 0.025,
+            "cacheRead": 0.04,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
-        "maxTokens": 65536
+        "maxTokens": 262144
     },
     {
         "id": "anthropic/claude-sonnet-4",
@@ -390,7 +454,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "x-ai/grok-4.3",
-        "name": "xAI: Grok 4.3",
+        "name": "Grok 4.3",
         "reasoning": true,
         "input": [
             "text",
@@ -403,23 +467,40 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheWrite": 0
         },
         "contextWindow": 1000000,
-        "maxTokens": 4096
+        "maxTokens": 1000000
     },
     {
-        "id": "deepseek-v4-flash",
-        "name": "DeepSeek V4 Flash",
+        "id": "anthropic/claude-opus-4.7-fast",
+        "name": "Claude Opus 4.7 (Fast)",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 30,
+            "output": 150,
+            "cacheRead": 3,
+            "cacheWrite": 37.5
+        },
+        "contextWindow": 1000000,
+        "maxTokens": 128000
+    },
+    {
+        "id": "tencent/hy3-preview",
+        "name": "Hy3 preview",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.14,
-            "output": 0.28,
-            "cacheRead": 0.028,
+            "input": 0.172,
+            "output": 0.572,
+            "cacheRead": 0.058,
             "cacheWrite": 0
         },
-        "contextWindow": 1000000,
-        "maxTokens": 384000
+        "contextWindow": 256000,
+        "maxTokens": 64000
     },
     {
         "id": "z-ai/glm-5.1",
@@ -429,12 +510,12 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0.5249999999999999,
+            "input": 0.8781,
+            "output": 3.5126,
+            "cacheRead": 0.1903,
             "cacheWrite": 0
         },
-        "contextWindow": 131072,
+        "contextWindow": 200000,
         "maxTokens": 131072
     },
     {
@@ -506,24 +587,24 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "z-ai/glm-4.6v",
-        "name": "Z.ai: GLM 4.6V",
+        "name": "GLM 4.6V",
         "reasoning": true,
         "input": [
             "text",
             "image"
         ],
         "cost": {
-            "input": 0.3,
-            "output": 0.9,
-            "cacheRead": 0.049999999999999996,
+            "input": 0.14,
+            "output": 0.42,
+            "cacheRead": 0.03,
             "cacheWrite": 0
         },
-        "contextWindow": 131072,
-        "maxTokens": 131072
+        "contextWindow": 200000,
+        "maxTokens": 64000
     },
     {
         "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-        "name": "NVIDIA: Nemotron 3 Nano Omni (free)",
+        "name": "Nemotron 3 Nano Omni (free)",
         "reasoning": true,
         "input": [
             "text",
@@ -556,7 +637,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "google/gemini-3-pro-image-preview",
-        "name": "Google: Nano Banana Pro (Gemini 3 Pro Image Preview)",
+        "name": "Nano Banana Pro (Gemini 3 Pro Image Preview)",
         "reasoning": true,
         "input": [
             "text",
@@ -565,7 +646,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "cost": {
             "input": 2,
             "output": 12,
-            "cacheRead": 0.19999999999999998,
+            "cacheRead": 0.2,
             "cacheWrite": 0.375
         },
         "contextWindow": 65536,
@@ -597,9 +678,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0.075,
+            "input": 0.15,
+            "output": 0.6,
+            "cacheRead": 0.08,
             "cacheWrite": 0
         },
         "contextWindow": 128000,
@@ -607,19 +688,19 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "z-ai/glm-4.6",
-        "name": "Z.ai: GLM 4.6",
+        "name": "GLM 4.6",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.39,
-            "output": 1.9,
-            "cacheRead": 0.175,
+            "input": 0.35,
+            "output": 1.54,
+            "cacheRead": 0.07,
             "cacheWrite": 0
         },
-        "contextWindow": 204800,
-        "maxTokens": 204800
+        "contextWindow": 200000,
+        "maxTokens": 64000
     },
     {
         "id": "openai/gpt-5.5",
@@ -657,23 +738,23 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "z-ai/glm-4.7",
-        "name": "Z.ai: GLM 4.7",
+        "name": "GLM 4.7",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.38,
-            "output": 1.98,
-            "cacheRead": 0.2,
+            "input": 0.28,
+            "output": 1.14,
+            "cacheRead": 0.06,
             "cacheWrite": 0
         },
-        "contextWindow": 202752,
-        "maxTokens": 65535
+        "contextWindow": 200000,
+        "maxTokens": 64000
     },
     {
         "id": "x-ai/grok-4.1-fast",
-        "name": "xAI: Grok 4.1 Fast",
+        "name": "Grok 4.1 Fast",
         "reasoning": true,
         "input": [
             "text",
@@ -686,39 +767,23 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheWrite": 0
         },
         "contextWindow": 2000000,
-        "maxTokens": 30000
+        "maxTokens": 64000
     },
     {
         "id": "qwen/qwen3-coder-next",
-        "name": "Qwen: Qwen3 Coder Next",
+        "name": "Qwen3 Coder Next",
         "reasoning": false,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.12,
-            "output": 0.75,
-            "cacheRead": 0.035,
+            "input": 0.11,
+            "output": 0.8,
+            "cacheRead": 0.07,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
-        "maxTokens": 65536
-    },
-    {
-        "id": "deepseek-v3.2",
-        "name": "DeepSeek-V3.2",
-        "reasoning": true,
-        "input": [
-            "text"
-        ],
-        "cost": {
-            "input": 0.58,
-            "output": 1.68,
-            "cacheRead": 0,
-            "cacheWrite": 0
-        },
-        "contextWindow": 128000,
-        "maxTokens": 128000
+        "maxTokens": 262144
     },
     {
         "id": "google/gemini-3.1-pro-preview",
@@ -747,7 +812,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "cost": {
             "input": 0.1,
             "output": 0.29,
-            "cacheRead": 0.045,
+            "cacheRead": 0.01,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
@@ -762,13 +827,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.95,
-            "output": 4,
-            "cacheRead": 0.16,
+            "input": 0.7,
+            "output": 3.5,
+            "cacheRead": 0.2,
             "cacheWrite": 0
         },
-        "contextWindow": 262000,
-        "maxTokens": 262000
+        "contextWindow": 262144,
+        "maxTokens": 262144
     },
     {
         "id": "google/gemini-2.5-flash-image",
@@ -786,22 +851,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 32768,
         "maxTokens": 32768
-    },
-    {
-        "id": "deepseek-v4-pro",
-        "name": "DeepSeek V4 Pro",
-        "reasoning": true,
-        "input": [
-            "text"
-        ],
-        "cost": {
-            "input": 1.74,
-            "output": 3.48,
-            "cacheRead": 0.145,
-            "cacheWrite": 0
-        },
-        "contextWindow": 1000000,
-        "maxTokens": 384000
     },
     {
         "id": "qwen/qwen3.5-flash",
@@ -839,19 +888,19 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "z-ai/glm-4.5-air",
-        "name": "Z.ai: GLM 4.5 Air",
+        "name": "GLM 4.5 Air",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.13,
-            "output": 0.85,
-            "cacheRead": 0.025,
+            "input": 0.11,
+            "output": 0.56,
+            "cacheRead": 0.02,
             "cacheWrite": 0
         },
-        "contextWindow": 131072,
-        "maxTokens": 98304
+        "contextWindow": 128000,
+        "maxTokens": 64000
     },
     {
         "id": "minimax/minimax-m2.5",
@@ -871,24 +920,24 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "qwen/qwen3.6-plus",
-        "name": "Qwen: Qwen3.6 Plus",
+        "name": "Qwen3.6-Plus",
         "reasoning": true,
         "input": [
             "text",
             "image"
         ],
         "cost": {
-            "input": 0.325,
-            "output": 1.95,
-            "cacheRead": 0.0325,
-            "cacheWrite": 0.40625
+            "input": 0.5,
+            "output": 3,
+            "cacheRead": 0.05,
+            "cacheWrite": 0.625
         },
         "contextWindow": 1000000,
-        "maxTokens": 65536
+        "maxTokens": 64000
     },
     {
         "id": "xiaomi/mimo-v2-omni",
-        "name": "Xiaomi: MiMo-V2-Omni",
+        "name": "MiMo V2 Omni",
         "reasoning": true,
         "input": [
             "text",
@@ -900,8 +949,8 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0.08,
             "cacheWrite": 0
         },
-        "contextWindow": 262144,
-        "maxTokens": 65536
+        "contextWindow": 265000,
+        "maxTokens": 265000
     },
     {
         "id": "openai/gpt-5-mini",
@@ -922,23 +971,23 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "nvidia/nemotron-3-super-120b-a12b",
-        "name": "NVIDIA Nemotron 3 Super 120B A12B",
+        "name": "Nemotron-3-Super-120B-A12B",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.15,
-            "output": 0.65,
+            "input": 0.3,
+            "output": 0.9,
             "cacheRead": 0,
             "cacheWrite": 0
         },
         "contextWindow": 256000,
-        "maxTokens": 32000
+        "maxTokens": 32768
     },
     {
         "id": "minimax/minimax-m2-her",
-        "name": "MiniMax: MiniMax M2-her",
+        "name": "MiniMax M2-her",
         "reasoning": false,
         "input": [
             "text"
@@ -986,18 +1035,18 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "z-ai/glm-5",
-        "name": "GLM-5",
+        "name": "GLM 5",
         "reasoning": true,
         "input": [
             "text"
         ],
         "cost": {
-            "input": 0.95,
-            "output": 3.15,
-            "cacheRead": 0.12,
+            "input": 0.58,
+            "output": 2.6,
+            "cacheRead": 0.14,
             "cacheWrite": 0
         },
-        "contextWindow": 204800,
-        "maxTokens": 131072
+        "contextWindow": 200000,
+        "maxTokens": 128000
     }
 ];
