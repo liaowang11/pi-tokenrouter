@@ -1,7 +1,7 @@
 export const BASE_URL = "https://api.tokenrouter.com/v1";
 export const PROVIDER_NAME = "tokenrouter";
 export const PROVIDER_DISPLAY_NAME = "TokenRouter";
-export const PROVIDER_API_KEY_ENV = "TOKENROUTER_API_KEY";
+export const PROVIDER_API_KEY_ENV = "$TOKENROUTER_API_KEY";
 
 export type TokenRouterProviderModel = {
     id: string;

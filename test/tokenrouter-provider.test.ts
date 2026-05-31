@@ -132,7 +132,7 @@ const providerConfig = createTokenRouterProviderConfig(mappedModels);
 assert.equal(providerConfig.name, "TokenRouter");
 assert.equal(providerConfig.baseUrl, "https://api.tokenrouter.com/v1");
 assert.equal(providerConfig.api, "openai-completions");
-assert.equal(providerConfig.apiKey, "TOKENROUTER_API_KEY");
+assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
 assert.equal("oauth" in providerConfig, false);
 assert.equal(providerConfig.models, mappedModels);

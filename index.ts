@@ -11,7 +11,7 @@
  *   /login tokenrouter
  *   # OR add to ~/.pi/agent/auth.json:
  *   #   "tokenrouter": { "type": "api_key", "key": "sk-..." }
- *   #   "tokenrouter": { "type": "api_key", "key": "TOKENROUTER_API_KEY" }
+ *   #   "tokenrouter": { "type": "api_key", "key": "$TOKENROUTER_API_KEY" }
  *   #   "tokenrouter": { "type": "api_key", "key": "!op read 'op://vault/item/key'" }
  */
 
