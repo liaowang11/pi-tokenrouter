@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mapTokenRouterCatalogToProviderModels } from "../model-catalog.js";
 import {
     createTokenRouterProviderConfig,
+    selectApi,
     type TokenRouterProviderModel,
 } from "../provider-config.js";
 
@@ -127,6 +128,21 @@ assert.deepEqual(mappedModels[2], {
     maxTokens: 4096,
 } satisfies TokenRouterProviderModel);
 
+// --- selectApi ---
+
+assert.equal(selectApi("openai/gpt-5.4"), "openai-responses");
+assert.equal(selectApi("openai/gpt-5.4-pro"), "openai-responses");
+assert.equal(selectApi("openai/gpt-5-mini"), "openai-responses");
+assert.equal(selectApi("openai/gpt-4o-mini"), "openai-responses");
+assert.equal(selectApi("anthropic/claude-sonnet-4"), "anthropic-messages");
+assert.equal(selectApi("anthropic/claude-haiku-4.5"), "anthropic-messages");
+assert.equal(selectApi("claude-haiku-4-5"), "anthropic-messages");
+assert.equal(selectApi("google/gemini-3.5-flash"), "openai-completions");
+assert.equal(selectApi("deepseek/deepseek-v4-pro"), "openai-completions");
+assert.equal(selectApi("qwen/qwen3.5-9b"), "openai-completions");
+
+// --- provider config ---
+
 const providerConfig = createTokenRouterProviderConfig(mappedModels);
 
 assert.equal(providerConfig.name, "TokenRouter");
@@ -135,4 +151,7 @@ assert.equal(providerConfig.api, "openai-completions");
 assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
 assert.equal("oauth" in providerConfig, false);
-assert.equal(providerConfig.models, mappedModels);
+assert.equal(providerConfig.models.length, 3);
+assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
+assert.equal(providerConfig.models[1]!.api, "openai-completions");
+assert.equal(providerConfig.models[2]!.api, "openai-completions");

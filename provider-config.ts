@@ -18,6 +18,12 @@ export type TokenRouterProviderModel = {
     maxTokens: number;
 };
 
+export function selectApi(modelId: string): "openai-responses" | "anthropic-messages" | "openai-completions" {
+    if (modelId.startsWith("openai/")) return "openai-responses";
+    if (modelId.startsWith("anthropic/") || modelId.startsWith("claude-")) return "anthropic-messages";
+    return "openai-completions";
+}
+
 export function createTokenRouterProviderConfig(models: TokenRouterProviderModel[]) {
     return {
         name: PROVIDER_DISPLAY_NAME,
@@ -25,6 +31,6 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         api: "openai-completions" as const,
         apiKey: PROVIDER_API_KEY_ENV,
         authHeader: true,
-        models,
+        models: models.map((m) => ({ ...m, api: selectApi(m.id) })),
     };
 }
