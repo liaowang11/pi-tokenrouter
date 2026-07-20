@@ -31,6 +31,10 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         api: "openai-completions" as const,
         apiKey: PROVIDER_API_KEY_ENV,
         authHeader: true,
-        models: models.map((m) => ({ ...m, api: selectApi(m.id) })),
+        models: models.map((m) => ({
+            ...m,
+            api: selectApi(m.id),
+            ...(m.id.startsWith("moonshotai/") ? { compat: { supportsDeveloperRole: false } } : {}),
+        })),
     };
 }

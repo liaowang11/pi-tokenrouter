@@ -155,3 +155,25 @@ assert.equal(providerConfig.models.length, 3);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
+
+const kimiProviderConfig = createTokenRouterProviderConfig([
+    {
+        id: "moonshotai/kimi-k3",
+        name: "Kimi K3",
+        reasoning: true,
+        input: ["text", "image"],
+        cost: {
+            input: 3,
+            output: 15,
+            cacheRead: 0.3,
+            cacheWrite: 0,
+        },
+        contextWindow: 1048576,
+        maxTokens: 131072,
+    },
+]);
+
+assert.deepEqual(
+    "compat" in kimiProviderConfig.models[0]! ? kimiProviderConfig.models[0]!.compat : undefined,
+    { supportsDeveloperRole: false },
+);
