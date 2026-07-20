@@ -3,6 +3,15 @@ export const PROVIDER_NAME = "tokenrouter";
 export const PROVIDER_DISPLAY_NAME = "TokenRouter";
 export const PROVIDER_API_KEY_ENV = "$TOKENROUTER_API_KEY";
 
+const KIMI_K3_THINKING_LEVEL_MAP = {
+    minimal: "max",
+    low: "max",
+    medium: "max",
+    high: "max",
+    xhigh: "max",
+    max: "max",
+} as const;
+
 export type TokenRouterProviderModel = {
     id: string;
     name: string;
@@ -31,10 +40,21 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         api: "openai-completions" as const,
         apiKey: PROVIDER_API_KEY_ENV,
         authHeader: true,
-        models: models.map((m) => ({
-            ...m,
-            api: selectApi(m.id),
-            ...(m.id.startsWith("moonshotai/") ? { compat: { supportsDeveloperRole: false } } : {}),
-        })),
+        models: models.map((m) => {
+            const isKimiK3 = m.id === "moonshotai/kimi-k3";
+            return {
+                ...m,
+                api: selectApi(m.id),
+                ...(isKimiK3 ? { thinkingLevelMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
+                ...(m.id.startsWith("moonshotai/")
+                    ? {
+                        compat: {
+                            supportsDeveloperRole: false,
+                            ...(isKimiK3 ? { reasoningEffortMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
+                        },
+                    }
+                    : {}),
+            };
+        }),
     };
 }

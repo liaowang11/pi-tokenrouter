@@ -175,5 +175,28 @@ const kimiProviderConfig = createTokenRouterProviderConfig([
 
 assert.deepEqual(
     "compat" in kimiProviderConfig.models[0]! ? kimiProviderConfig.models[0]!.compat : undefined,
-    { supportsDeveloperRole: false },
+    {
+        supportsDeveloperRole: false,
+        reasoningEffortMap: {
+            minimal: "max",
+            low: "max",
+            medium: "max",
+            high: "max",
+            xhigh: "max",
+            max: "max",
+        },
+    },
+);
+assert.deepEqual(
+    "thinkingLevelMap" in kimiProviderConfig.models[0]!
+        ? kimiProviderConfig.models[0]!.thinkingLevelMap
+        : undefined,
+    {
+        minimal: "max",
+        low: "max",
+        medium: "max",
+        high: "max",
+        xhigh: "max",
+        max: "max",
+    },
 );
