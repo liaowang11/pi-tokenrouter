@@ -1,7 +1,7 @@
 import type { TokenRouterProviderModel } from "./provider-config.js";
 
 // Derived from TokenRouter /v1/models and enriched with models.dev, then OpenRouter metadata.
-// Generated on 2026-08-04T07:48:32.103Z.
+// Generated on 2026-08-12T17:13:18.116Z.
 export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "openai/gpt-5.4-nano",
@@ -36,23 +36,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 262144,
         "maxTokens": 262144
-    },
-    {
-        "id": "moonshotai/kimi-k3-free",
-        "name": "Kimi K3 (Free)",
-        "reasoning": true,
-        "input": [
-            "text",
-            "image"
-        ],
-        "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-        },
-        "contextWindow": 1048576,
-        "maxTokens": 131072
     },
     {
         "id": "qwen/qwen3.7-max",
@@ -329,13 +312,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.39,
-            "output": 2.34,
-            "cacheRead": 0,
+            "input": 0.5,
+            "output": 3.6,
+            "cacheRead": 0.3,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
-        "maxTokens": 65536
+        "maxTokens": 262144
     },
     {
         "id": "qwen/qwen3.8-max",
@@ -395,13 +378,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.966,
-            "output": 3.036,
-            "cacheRead": 0.1794,
+            "input": 1.4,
+            "output": 4.4,
+            "cacheRead": 0.26,
             "cacheWrite": 0
         },
         "contextWindow": 204800,
-        "maxTokens": 128000
+        "maxTokens": 131072
     },
     {
         "id": "anthropic/claude-sonnet-5",
@@ -421,22 +404,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 128000
     },
     {
-        "id": "seed-2-0-pro-260328",
-        "name": "seed-2-0-pro-260328",
-        "reasoning": false,
-        "input": [
-            "text"
-        ],
-        "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-        },
-        "contextWindow": 4096,
-        "maxTokens": 4096
-    },
-    {
         "id": "qwen3.5-omni-plus",
         "name": "Qwen3.5 Omni Plus",
         "reasoning": false,
@@ -452,6 +419,22 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 983616,
         "maxTokens": 65536
+    },
+    {
+        "id": "seed-2-0-pro-260328",
+        "name": "seed-2-0-pro-260328",
+        "reasoning": false,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 4096,
+        "maxTokens": 4096
     },
     {
         "id": "moonshotai/kimi-k2.7-code",
@@ -562,13 +545,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.76,
-            "output": 2.42,
-            "cacheRead": 0.14,
+            "input": 0.49,
+            "output": 1.54,
+            "cacheRead": 0.091,
             "cacheWrite": 0
         },
         "contextWindow": 1048576,
-        "maxTokens": 262144
+        "maxTokens": 131072
     },
     {
         "id": "openai/gpt-oss-120b",
@@ -580,7 +563,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "cost": {
             "input": 0.037,
             "output": 0.17,
-            "cacheRead": 0,
+            "cacheRead": 0.03,
             "cacheWrite": 0
         },
         "contextWindow": 131072,
@@ -637,6 +620,22 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "seed-2-0-code-preview-260328",
         "name": "seed-2-0-code-preview-260328",
+        "reasoning": false,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 4096,
+        "maxTokens": 4096
+    },
+    {
+        "id": "dreamina-seedance-2-5-hc",
+        "name": "dreamina-seedance-2-5-hc",
         "reasoning": false,
         "input": [
             "text"
@@ -782,17 +781,17 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     },
     {
         "id": "claude-haiku-4-5",
-        "name": "Claude Haiku 4.5",
+        "name": "Claude Haiku 4.5 (latest)",
         "reasoning": true,
         "input": [
             "text",
             "image"
         ],
         "cost": {
-            "input": 1.09,
-            "output": 5.43,
-            "cacheRead": 0,
-            "cacheWrite": 0
+            "input": 0.996,
+            "output": 4.982,
+            "cacheRead": 0.099,
+            "cacheWrite": 1.186
         },
         "contextWindow": 200000,
         "maxTokens": 200000
@@ -887,13 +886,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.26,
-            "output": 2.08,
+            "input": 0.29,
+            "output": 2.4,
             "cacheRead": 0,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
-        "maxTokens": 65536
+        "maxTokens": 81920
     },
     {
         "id": "minimax/minimax-m2.7",
@@ -903,9 +902,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.25,
-            "output": 1,
-            "cacheRead": 0.05,
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.06,
             "cacheWrite": 0
         },
         "contextWindow": 204800,
@@ -1239,9 +1238,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.5,
-            "output": 2,
-            "cacheRead": 0.09999999999999999,
+            "input": 0.55,
+            "output": 2.2,
+            "cacheRead": 0.11,
             "cacheWrite": 0
         },
         "contextWindow": 200000,
@@ -1287,13 +1286,13 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.09,
+            "input": 0.08,
             "output": 0.18,
-            "cacheRead": 0.018,
+            "cacheRead": 0.016,
             "cacheWrite": 0
         },
         "contextWindow": 1048576,
-        "maxTokens": 65536
+        "maxTokens": 384000
     },
     {
         "id": "moonshotai/kimi-k2.6",
@@ -1304,9 +1303,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.589,
-            "output": 2.48,
-            "cacheRead": 0.0992,
+            "input": 0.5795,
+            "output": 2.44,
+            "cacheRead": 0.0976,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
@@ -1332,19 +1331,18 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "qwen/qwen3.5-flash",
         "name": "Qwen3.5 Flash",
-        "reasoning": false,
+        "reasoning": true,
         "input": [
-            "text",
-            "image"
+            "text"
         ],
         "cost": {
-            "input": 0.1,
-            "output": 0.4,
-            "cacheRead": 0,
+            "input": 0.029,
+            "output": 0.287,
+            "cacheRead": 0.0058,
             "cacheWrite": 0
         },
-        "contextWindow": 1020000,
-        "maxTokens": 1020000
+        "contextWindow": 1000000,
+        "maxTokens": 250000
     },
     {
         "id": "anthropic/claude-opus-5",
@@ -1464,22 +1462,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 131072
     },
     {
-        "id": "minimax/minimax-m2.1-highspeed",
-        "name": "minimax/minimax-m2.1-highspeed",
-        "reasoning": false,
-        "input": [
-            "text"
-        ],
-        "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-        },
-        "contextWindow": 4096,
-        "maxTokens": 4096
-    },
-    {
         "id": "anthropic/claude-opus-4.8",
         "name": "Claude Opus 4.8",
         "reasoning": true,
@@ -1495,6 +1477,22 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 1000000,
         "maxTokens": 128000
+    },
+    {
+        "id": "minimax/minimax-m2.1-highspeed",
+        "name": "minimax/minimax-m2.1-highspeed",
+        "reasoning": false,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 4096,
+        "maxTokens": 4096
     },
     {
         "id": "z-ai/glm-5",
