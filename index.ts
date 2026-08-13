@@ -17,8 +17,14 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { TOKENROUTER_MODELS } from "./models.generated.js";
-import { createTokenRouterProviderConfig, PROVIDER_NAME } from "./provider-config.js";
+import {
+    createTokenRouterProviderConfig,
+    ensureToolSchemaRequired,
+    PROVIDER_NAME,
+    type ProviderRequestPayload,
+} from "./provider-config.js";
 
 export default async function(pi: ExtensionAPI) {
     pi.registerProvider(PROVIDER_NAME, createTokenRouterProviderConfig(TOKENROUTER_MODELS));
+    pi.on("before_provider_request", (event) => ensureToolSchemaRequired(event.payload as ProviderRequestPayload));
 }

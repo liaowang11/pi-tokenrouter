@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mapTokenRouterCatalogToProviderModels } from "../model-catalog.js";
 import {
     createTokenRouterProviderConfig,
+    ensureToolSchemaRequired,
     selectApi,
     type TokenRouterProviderModel,
 } from "../provider-config.js";
@@ -156,6 +157,11 @@ assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
 
+// The Anthropic client appends /v1/messages, so those models must drop /v1 from the base URL.
+assert.equal(providerConfig.models[0]!.baseUrl, "https://api.tokenrouter.com");
+assert.equal("baseUrl" in providerConfig.models[1]!, false);
+assert.equal("baseUrl" in providerConfig.models[2]!, false);
+
 // TokenRouter upstreams reject the "developer" role, so every model must send "system".
 for (const model of providerConfig.models) {
     assert.equal(
@@ -187,6 +193,42 @@ assert.deepEqual(
     { supportsDeveloperRole: false },
 );
 assert.equal("thinkingLevelMap" in grokProviderConfig.models[0]!, false);
+
+// Claude 5 and Opus 4.7+ reject thinking.type "enabled" upstream and need adaptive thinking,
+// while Sonnet 4.5 and Haiku 4.5 reject adaptive, so the flag is per model.
+const claudeProviderConfig = createTokenRouterProviderConfig([
+    {
+        id: "anthropic/claude-sonnet-5",
+        name: "Claude Sonnet 5",
+        reasoning: true,
+        input: ["text", "image"],
+        cost: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+        contextWindow: 1000000,
+        maxTokens: 128000,
+    },
+    {
+        id: "anthropic/claude-sonnet-4.5",
+        name: "Claude Sonnet 4.5",
+        reasoning: true,
+        input: ["text", "image"],
+        cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
+        contextWindow: 200000,
+        maxTokens: 64000,
+    },
+]);
+
+assert.equal(
+    "compat" in claudeProviderConfig.models[0]!
+        ? (claudeProviderConfig.models[0]!.compat as { forceAdaptiveThinking?: boolean }).forceAdaptiveThinking
+        : undefined,
+    true,
+);
+assert.equal(
+    "compat" in claudeProviderConfig.models[1]!
+        ? "forceAdaptiveThinking" in claudeProviderConfig.models[1]!.compat
+        : true,
+    false,
+);
 
 const kimiProviderConfig = createTokenRouterProviderConfig([
     {
@@ -232,3 +274,46 @@ assert.deepEqual(
         max: "max",
     },
 );
+
+// --- ensureToolSchemaRequired ---
+
+// x-ai upstreams reject a function schema whose parameters omit "required".
+const xaiPayload = {
+    model: "x-ai/grok-4.6",
+    tools: [
+        { type: "function", function: { name: "get_goal", parameters: { type: "object", properties: {} } } },
+        {
+            type: "function",
+            function: {
+                name: "read",
+                parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+            },
+        },
+    ],
+};
+
+const normalized = ensureToolSchemaRequired(xaiPayload);
+
+assert.deepEqual(normalized.tools[0]!.function.parameters, {
+    type: "object",
+    properties: {},
+    required: [],
+});
+assert.deepEqual(normalized.tools[1]!.function.parameters, {
+    type: "object",
+    properties: { path: { type: "string" } },
+    required: ["path"],
+});
+// The caller's payload must not be mutated in place.
+assert.equal("required" in xaiPayload.tools[0]!.function.parameters, false);
+
+// Other providers' models are left untouched.
+const otherPayload = {
+    model: "deepseek/deepseek-v4-flash",
+    tools: [{ type: "function", function: { name: "get_goal", parameters: { type: "object", properties: {} } } }],
+};
+assert.equal(ensureToolSchemaRequired(otherPayload), otherPayload);
+
+// Payloads without tools pass through unchanged.
+const toollessPayload = { model: "x-ai/grok-4.6" };
+assert.equal(ensureToolSchemaRequired(toollessPayload), toollessPayload);
