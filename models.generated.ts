@@ -1,7 +1,7 @@
 import type { TokenRouterProviderModel } from "./provider-config.js";
 
 // Derived from TokenRouter /v1/models and enriched with models.dev, then OpenRouter metadata.
-// Generated on 2026-08-12T17:13:18.116Z.
+// Generated on 2026-08-13T08:42:34.241Z.
 export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "openai/gpt-5.4-nano",
@@ -237,6 +237,23 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 4096
     },
     {
+        "id": "x-ai/grok-4.6",
+        "name": "Grok 4.6",
+        "reasoning": true,
+        "input": [
+            "text",
+            "image"
+        ],
+        "cost": {
+            "input": 2,
+            "output": 6,
+            "cacheRead": 0.5,
+            "cacheWrite": 0
+        },
+        "contextWindow": 500000,
+        "maxTokens": 500000
+    },
+    {
         "id": "z-ai/glm-5-turbo",
         "name": "GLM-5-Turbo",
         "reasoning": true,
@@ -385,6 +402,38 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 204800,
         "maxTokens": 131072
+    },
+    {
+        "id": "nvidia/nemotron-3.5-lightning",
+        "name": "Nemotron 3.5 Lightning 30B A3B",
+        "reasoning": true,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0.1,
+            "output": 0.25,
+            "cacheRead": 0.05,
+            "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 262144
+    },
+    {
+        "id": "deepseek/deepseek-v4-pro-0813",
+        "name": "DeepSeek V4 Pro 0813",
+        "reasoning": true,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0.435,
+            "output": 0.87,
+            "cacheRead": 0.003625,
+            "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 384000
     },
     {
         "id": "anthropic/claude-sonnet-5",
@@ -545,9 +594,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.49,
-            "output": 1.54,
-            "cacheRead": 0.091,
+            "input": 0.5,
+            "output": 3.15,
+            "cacheRead": 0.1,
             "cacheWrite": 0
         },
         "contextWindow": 1048576,
@@ -1003,9 +1052,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.14,
-            "output": 1,
-            "cacheRead": 0,
+            "input": 0.25,
+            "output": 1.25,
+            "cacheRead": 0.25,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
@@ -1238,9 +1287,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.55,
-            "output": 2.2,
-            "cacheRead": 0.11,
+            "input": 0.5,
+            "output": 2,
+            "cacheRead": 0.09999999999999999,
             "cacheWrite": 0
         },
         "contextWindow": 200000,
@@ -1303,9 +1352,9 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "image"
         ],
         "cost": {
-            "input": 0.5795,
-            "output": 2.44,
-            "cacheRead": 0.0976,
+            "input": 0.95,
+            "output": 4,
+            "cacheRead": 0.16,
             "cacheWrite": 0
         },
         "contextWindow": 262144,
