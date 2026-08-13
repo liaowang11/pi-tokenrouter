@@ -156,6 +156,38 @@ assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
 
+// TokenRouter upstreams reject the "developer" role, so every model must send "system".
+for (const model of providerConfig.models) {
+    assert.equal(
+        "compat" in model ? model.compat.supportsDeveloperRole : undefined,
+        false,
+        `${model.id} must set supportsDeveloperRole: false`,
+    );
+}
+
+const grokProviderConfig = createTokenRouterProviderConfig([
+    {
+        id: "x-ai/grok-4.6",
+        name: "Grok 4.6",
+        reasoning: true,
+        input: ["text", "image"],
+        cost: {
+            input: 2,
+            output: 6,
+            cacheRead: 0.5,
+            cacheWrite: 0,
+        },
+        contextWindow: 500000,
+        maxTokens: 500000,
+    },
+]);
+
+assert.deepEqual(
+    "compat" in grokProviderConfig.models[0]! ? grokProviderConfig.models[0]!.compat : undefined,
+    { supportsDeveloperRole: false },
+);
+assert.equal("thinkingLevelMap" in grokProviderConfig.models[0]!, false);
+
 const kimiProviderConfig = createTokenRouterProviderConfig([
     {
         id: "moonshotai/kimi-k3",

@@ -46,14 +46,12 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
                 ...m,
                 api: selectApi(m.id),
                 ...(isKimiK3 ? { thinkingLevelMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
-                ...(m.id.startsWith("moonshotai/")
-                    ? {
-                        compat: {
-                            supportsDeveloperRole: false,
-                            ...(isKimiK3 ? { reasoningEffortMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
-                        },
-                    }
-                    : {}),
+                compat: {
+                    // TokenRouter upstreams reject the "developer" role, so send the system prompt
+                    // as "system". Verified accepted by every model that serves requests at all.
+                    supportsDeveloperRole: false,
+                    ...(isKimiK3 ? { reasoningEffortMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
+                },
             };
         }),
     };
