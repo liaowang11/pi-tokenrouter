@@ -40,6 +40,25 @@ export type TokenRouterProviderModel = {
     maxTokens: number;
 };
 
+/**
+ * Ceiling for a model's declared output limit.
+ *
+ * pi asks for the whole remaining context window as output room, keeping only a flat
+ * 4096-token margin against a `characters / 4` estimate of the prompt. On code-heavy
+ * context that estimate runs about 25% low, so the request total exceeds a shared
+ * prompt-plus-output budget and the upstream answers with a context-length error. pi
+ * reads that error as "out of room" and compacts, at a fraction of the real window.
+ *
+ * Declaring a smaller limit keeps the leftover window as slack. The Command Code pi
+ * provider caps the same way with `Math.min(contextLength, 65536)`; 32768 also fits
+ * inside Anthropic's real 64000 output cap, which models.dev reports as 200000.
+ */
+const MAX_OUTPUT_TOKENS = 32768;
+
+export function resolveMaxTokens(contextWindow: number, maxTokens: number): number {
+    return Math.min(maxTokens, contextWindow, MAX_OUTPUT_TOKENS);
+}
+
 export function selectApi(modelId: string): "openai-responses" | "anthropic-messages" | "openai-completions" {
     if (modelId.startsWith("openai/")) return "openai-responses";
     if (modelId.startsWith("anthropic/") || modelId.startsWith("claude-")) return "anthropic-messages";
@@ -95,6 +114,7 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
             return {
                 ...m,
                 api,
+                maxTokens: resolveMaxTokens(m.contextWindow, m.maxTokens),
                 ...(api === "anthropic-messages" ? { baseUrl: ANTHROPIC_BASE_URL } : {}),
                 ...(isKimiK3 ? { thinkingLevelMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
                 compat: {

@@ -3,6 +3,7 @@ import { mapTokenRouterCatalogToProviderModels } from "../model-catalog.js";
 import {
     createTokenRouterProviderConfig,
     ensureToolSchemaRequired,
+    resolveMaxTokens,
     selectApi,
     type TokenRouterProviderModel,
 } from "../provider-config.js";
@@ -141,6 +142,19 @@ assert.equal(selectApi("claude-haiku-4-5"), "anthropic-messages");
 assert.equal(selectApi("google/gemini-3.5-flash"), "openai-completions");
 assert.equal(selectApi("deepseek/deepseek-v4-pro"), "openai-completions");
 assert.equal(selectApi("qwen/qwen3.5-9b"), "openai-completions");
+
+// --- resolveMaxTokens ---
+
+// pi asks for the whole remaining window as output room, keeping only a flat 4096-token
+// margin against a character-based estimate. A large declared output limit therefore
+// overflows the shared prompt-plus-output budget. Cap it the way the Command Code
+// provider does, and keep any smaller real limit.
+assert.equal(resolveMaxTokens(500000, 500000), 32768); // x-ai/grok-4.6
+assert.equal(resolveMaxTokens(200000, 200000), 32768); // claude-haiku-4-5
+assert.equal(resolveMaxTokens(200000, 64000), 32768);
+assert.equal(resolveMaxTokens(4096, 4096), 4096); // small windows stay untouched
+assert.equal(resolveMaxTokens(262144, 16384), 16384); // a smaller real limit wins
+assert.equal(resolveMaxTokens(8192, 65536), 8192); // never exceed the window
 
 // --- provider config ---
 
@@ -317,3 +331,19 @@ assert.equal(ensureToolSchemaRequired(otherPayload), otherPayload);
 // Payloads without tools pass through unchanged.
 const toollessPayload = { model: "x-ai/grok-4.6" };
 assert.equal(ensureToolSchemaRequired(toollessPayload), toollessPayload);
+
+// The cap must reach the registered models, not just the helper.
+const cappedProviderConfig = createTokenRouterProviderConfig([
+    {
+        id: "x-ai/grok-4.6",
+        name: "Grok 4.6",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0 },
+        contextWindow: 500000,
+        maxTokens: 500000,
+    },
+]);
+
+assert.equal(cappedProviderConfig.models[0]!.maxTokens, 32768);
+assert.equal(cappedProviderConfig.models[0]!.contextWindow, 500000);
