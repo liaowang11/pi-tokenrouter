@@ -6,7 +6,7 @@ type TokenRouterCatalogModel = {
     tags?: string;
 };
 
-type TokenRouterCatalogPayload = {
+export type TokenRouterCatalogPayload = {
     data?: TokenRouterCatalogModel[];
 };
 
@@ -32,7 +32,7 @@ type ModelsDevProvider = {
     models?: Record<string, ModelsDevModel>;
 };
 
-type ModelsDevPayload = Record<string, ModelsDevProvider>;
+export type ModelsDevPayload = Record<string, ModelsDevProvider>;
 
 type OpenRouterCatalogModel = {
     id: string;
@@ -53,7 +53,7 @@ type OpenRouterCatalogModel = {
     };
 };
 
-type OpenRouterCatalogPayload = {
+export type OpenRouterCatalogPayload = {
     data?: OpenRouterCatalogModel[];
 };
 

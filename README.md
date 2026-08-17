@@ -34,8 +34,9 @@ export TOKENROUTER_API_KEY=sk-...
 ## How it works
 
 1. Registers TokenRouter as an API-key provider, so `/login tokenrouter` is handled under `Use an API key`.
-2. Uses a checked-in snapshot generated from TokenRouter's authenticated `/v1/models` response.
-3. Enriches each model with metadata from `models.dev` when available, then falls back to OpenRouter for pricing, context window, max output tokens, reasoning support, and image support.
+2. Discovers the model catalog at startup: it fetches TokenRouter's authenticated `/v1/models` response in the background and enriches each model with metadata from `models.dev` when available, then falls back to OpenRouter for pricing, context window, max output tokens, reasoning support, and image support.
+3. Caches the discovered catalog at `~/.pi/agent/tokenrouter-models.json`. When the network or the API key is unavailable, the cache is used; when there is no valid cache either, a bundled snapshot (`models.generated.ts`) is used.
+4. `/tokenrouter-refresh` re-runs discovery on demand and reports what changed.
 
 ## License
 
