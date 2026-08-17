@@ -57,8 +57,33 @@ export type OpenRouterCatalogPayload = {
     data?: OpenRouterCatalogModel[];
 };
 
-const DEFAULT_CONTEXT_WINDOW = 4096;
+// pi requests `contextWindow − prompt estimate − 4096` output tokens, floored at 1, so an
+// under-declared window makes every reply a 1-token "length" truncation. 131072 is the
+// safer wrong guess: an over-declared window degrades into upstream context errors that
+// pi recovers from by compacting.
+const DEFAULT_CONTEXT_WINDOW = 131072;
 const DEFAULT_MAX_TOKENS = 4096;
+
+// TokenRouter lists variant ids like qwen/qwen3.8-max-free or
+// deepseek/deepseek-v4-pro-0813-free that models.dev and OpenRouter have never heard of.
+const VARIANT_SUFFIX = /-(free|\d{4}|\d{8})$/;
+
+type VariantCandidate = {
+    id: string;
+    stripped: string[];
+};
+
+function baseVariantCandidates(id: string): VariantCandidate[] {
+    const candidates: VariantCandidate[] = [];
+    let current = id;
+    const stripped: string[] = [];
+    for (let match = VARIANT_SUFFIX.exec(current); match; match = VARIANT_SUFFIX.exec(current)) {
+        stripped.unshift(match[1]!);
+        current = current.slice(0, -match[0].length);
+        candidates.push({ id: current, stripped: [...stripped] });
+    }
+    return candidates;
+}
 
 function parseTags(tags: string | undefined): Set<string> {
     return new Set(
@@ -121,12 +146,29 @@ export function mapTokenRouterCatalogToProviderModels(
         .filter((model) => supportsTextEndpoints(model) && isTextCapableTagSet(parseTags(model.tags)))
         .map((model) => {
             const tags = parseTags(model.tags);
-            const modelsDevModel = modelsDevLookup.get(model.id);
-            const openRouterModel = openRouterLookup.get(model.id);
+            let modelsDevModel = modelsDevLookup.get(model.id);
+            let openRouterModel = openRouterLookup.get(model.id);
+            let strippedSuffix: string[] | undefined;
+            if (!modelsDevModel && !openRouterModel) {
+                for (const candidate of baseVariantCandidates(model.id)) {
+                    modelsDevModel = modelsDevLookup.get(candidate.id);
+                    openRouterModel = openRouterLookup.get(candidate.id);
+                    if (modelsDevModel || openRouterModel) {
+                        strippedSuffix = candidate.stripped;
+                        break;
+                    }
+                }
+            }
+            const baseName = modelsDevModel?.name ?? openRouterModel?.name;
+            const isFree = model.id.endsWith("-free");
 
             return {
                 id: model.id,
-                name: modelsDevModel?.name ?? openRouterModel?.name ?? model.id,
+                name: baseName
+                    ? strippedSuffix
+                        ? `${baseName} (${strippedSuffix.join(", ")})`
+                        : baseName
+                    : model.id,
                 reasoning:
                     modelsDevModel?.reasoning === true ||
                     (openRouterModel?.supported_parameters?.includes("reasoning") ?? false),
@@ -136,17 +178,20 @@ export function mapTokenRouterCatalogToProviderModels(
                         : openRouterModel?.architecture?.modality?.includes("image")
                             ? ["text", "image"]
                             : buildInputFromTags(tags),
-                cost: {
-                    input: modelsDevModel?.cost?.input ?? parseOpenRouterPrice(openRouterModel?.pricing?.prompt),
-                    output:
-                        modelsDevModel?.cost?.output ?? parseOpenRouterPrice(openRouterModel?.pricing?.completion),
-                    cacheRead:
-                        modelsDevModel?.cost?.cache_read ??
-                        parseOpenRouterPrice(openRouterModel?.pricing?.input_cache_read),
-                    cacheWrite:
-                        modelsDevModel?.cost?.cache_write ??
-                        parseOpenRouterPrice(openRouterModel?.pricing?.input_cache_write),
-                },
+                cost: isFree
+                    ? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+                    : {
+                        input: modelsDevModel?.cost?.input ?? parseOpenRouterPrice(openRouterModel?.pricing?.prompt),
+                        output:
+                            modelsDevModel?.cost?.output ??
+                            parseOpenRouterPrice(openRouterModel?.pricing?.completion),
+                        cacheRead:
+                            modelsDevModel?.cost?.cache_read ??
+                            parseOpenRouterPrice(openRouterModel?.pricing?.input_cache_read),
+                        cacheWrite:
+                            modelsDevModel?.cost?.cache_write ??
+                            parseOpenRouterPrice(openRouterModel?.pricing?.input_cache_write),
+                    },
                 contextWindow:
                     firstPositive(modelsDevModel?.limit?.context, openRouterModel?.context_length) ??
                     DEFAULT_CONTEXT_WINDOW,

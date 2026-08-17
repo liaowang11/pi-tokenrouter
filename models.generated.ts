@@ -1,7 +1,7 @@
 import type { TokenRouterProviderModel } from "./provider-config.js";
 
-// Derived from TokenRouter /v1/models and enriched with models.dev, then OpenRouter metadata.
-// Generated on 2026-08-17T02:24:18.653Z.
+// First-run fallback before the runtime-discovered catalog is cached; regenerated with model-loader.ts.
+// Generated on 2026-08-17T07:36:31.676Z.
 export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
     {
         "id": "openai/gpt-5.4-nano",
@@ -99,7 +99,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -149,7 +149,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -464,7 +464,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -598,7 +598,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0.26,
             "cacheWrite": 0
         },
-        "contextWindow": 262144,
+        "contextWindow": 1048576,
         "maxTokens": 262144
     },
     {
@@ -647,7 +647,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -679,7 +679,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -695,7 +695,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -825,8 +825,8 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 0,
-        "maxTokens": 0
+        "contextWindow": 131072,
+        "maxTokens": 4096
     },
     {
         "id": "claude-haiku-4-5",
@@ -858,7 +858,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -923,7 +923,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -989,7 +989,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -1110,6 +1110,22 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         },
         "contextWindow": 200000,
         "maxTokens": 64000
+    },
+    {
+        "id": "deepseek/deepseek-v4-pro-0813-free",
+        "name": "DeepSeek V4 Pro 0813 (free)",
+        "reasoning": true,
+        "input": [
+            "text"
+        ],
+        "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+        },
+        "contextWindow": 1048576,
+        "maxTokens": 384000
     },
     {
         "id": "mistralai/devstral-2512",
@@ -1287,20 +1303,21 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "text"
         ],
         "cost": {
-            "input": 0.5,
-            "output": 2,
-            "cacheRead": 0.1,
+            "input": 0.55,
+            "output": 2.2,
+            "cacheRead": 0.11,
             "cacheWrite": 0
         },
-        "contextWindow": 202752,
+        "contextWindow": 204800,
         "maxTokens": 131072
     },
     {
         "id": "qwen/qwen3.8-max-free",
-        "name": "qwen/qwen3.8-max-free",
-        "reasoning": false,
+        "name": "Qwen3.8 Max (free)",
+        "reasoning": true,
         "input": [
-            "text"
+            "text",
+            "image"
         ],
         "cost": {
             "input": 0,
@@ -1308,8 +1325,8 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
-        "maxTokens": 4096
+        "contextWindow": 1000000,
+        "maxTokens": 131072
     },
     {
         "id": "seed-2-0-lite-260428",
@@ -1324,7 +1341,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {
@@ -1528,22 +1545,6 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
         "maxTokens": 131072
     },
     {
-        "id": "deepseek/deepseek-v4-pro-test",
-        "name": "deepseek/deepseek-v4-pro-test",
-        "reasoning": false,
-        "input": [
-            "text"
-        ],
-        "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-        },
-        "contextWindow": 4096,
-        "maxTokens": 4096
-    },
-    {
         "id": "anthropic/claude-opus-4.8",
         "name": "Claude Opus 4.8",
         "reasoning": true,
@@ -1573,7 +1574,7 @@ export const TOKENROUTER_MODELS: TokenRouterProviderModel[] = [
             "cacheRead": 0,
             "cacheWrite": 0
         },
-        "contextWindow": 4096,
+        "contextWindow": 131072,
         "maxTokens": 4096
     },
     {

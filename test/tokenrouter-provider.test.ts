@@ -40,6 +40,16 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
                 supported_endpoint_types: ["openai"],
                 tags: "",
             },
+            {
+                id: "deepseek/deepseek-v9-0813-free",
+                supported_endpoint_types: ["openai"],
+                tags: "Text",
+            },
+            {
+                id: "fallback/openrouter-model-free",
+                supported_endpoint_types: ["openai"],
+                tags: "Text",
+            },
         ],
     },
     {
@@ -50,6 +60,17 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
                 "google/gemini-embedding-2": {
                     name: "Gemini Embedding 2",
                     limit: { context: 0, output: 0 },
+                },
+            },
+        },
+        deepseek: {
+            models: {
+                "deepseek/deepseek-v9": {
+                    name: "DeepSeek V9",
+                    reasoning: true,
+                    limit: { context: 131072, output: 65536 },
+                    cost: { input: 0.28, output: 0.42 },
+                    modalities: { input: ["text"] },
                 },
             },
         },
@@ -102,7 +123,7 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
     },
 );
 
-assert.equal(mappedModels.length, 4);
+assert.equal(mappedModels.length, 6);
 assert.deepEqual(mappedModels[0], {
     id: "anthropic/claude-sonnet-4",
     name: "Claude Sonnet 4 from models.dev",
@@ -141,7 +162,7 @@ assert.deepEqual(mappedModels[2], {
         cacheRead: 0,
         cacheWrite: 0,
     },
-    contextWindow: 4096,
+    contextWindow: 131072,
     maxTokens: 4096,
 } satisfies TokenRouterProviderModel);
 assert.deepEqual(mappedModels[3], {
@@ -155,8 +176,40 @@ assert.deepEqual(mappedModels[3], {
         cacheRead: 0,
         cacheWrite: 0,
     },
-    contextWindow: 4096,
+    contextWindow: 131072,
     maxTokens: 4096,
+} satisfies TokenRouterProviderModel);
+
+// TokenRouter-only variant ids (-free, date stamps) borrow limits, reasoning, and
+// modalities from their base model; -free ids always cost zero. Without the borrowed
+// window, pi computes a 1-token output budget and every reply truncates.
+assert.deepEqual(mappedModels[4], {
+    id: "deepseek/deepseek-v9-0813-free",
+    name: "DeepSeek V9 (0813, free)",
+    reasoning: true,
+    input: ["text"],
+    cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+    },
+    contextWindow: 131072,
+    maxTokens: 65536,
+} satisfies TokenRouterProviderModel);
+assert.deepEqual(mappedModels[5], {
+    id: "fallback/openrouter-model-free",
+    name: "Fallback OpenRouter Model (free)",
+    reasoning: true,
+    input: ["text", "image"],
+    cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+    },
+    contextWindow: 128000,
+    maxTokens: 16000,
 } satisfies TokenRouterProviderModel);
 
 // --- selectApi ---
@@ -195,11 +248,13 @@ assert.equal(providerConfig.api, "openai-completions");
 assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
 assert.equal("oauth" in providerConfig, false);
-assert.equal(providerConfig.models.length, 4);
+assert.equal(providerConfig.models.length, 6);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
 assert.equal(providerConfig.models[3]!.api, "openai-completions");
+assert.equal(providerConfig.models[4]!.api, "openai-completions");
+assert.equal(providerConfig.models[5]!.api, "openai-completions");
 
 // The Anthropic client appends /v1/messages, so those models must drop /v1 from the base URL.
 assert.equal(providerConfig.models[0]!.baseUrl, "https://api.tokenrouter.com");
@@ -309,6 +364,31 @@ assert.deepEqual(
         high: "max",
         xhigh: "max",
         max: "max",
+    },
+);
+
+// qwen3.8-max-free only accepts reasoning_effort low/medium/xhigh (probed 2026-08-17;
+// the paid qwen3.8-max accepts high), so pi's levels must be mapped onto that set.
+const qwenFreeProviderConfig = createTokenRouterProviderConfig([claudeModel("qwen/qwen3.8-max-free")]);
+const QWEN_FREE_EXPECTED_MAP = {
+    minimal: "low",
+    low: "low",
+    medium: "medium",
+    high: "xhigh",
+    xhigh: "xhigh",
+    max: "xhigh",
+};
+assert.deepEqual(
+    "thinkingLevelMap" in qwenFreeProviderConfig.models[0]!
+        ? qwenFreeProviderConfig.models[0]!.thinkingLevelMap
+        : undefined,
+    QWEN_FREE_EXPECTED_MAP,
+);
+assert.deepEqual(
+    "compat" in qwenFreeProviderConfig.models[0]! ? qwenFreeProviderConfig.models[0]!.compat : undefined,
+    {
+        supportsDeveloperRole: false,
+        reasoningEffortMap: QWEN_FREE_EXPECTED_MAP,
     },
 );
 

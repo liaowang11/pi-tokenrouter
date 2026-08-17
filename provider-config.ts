@@ -19,14 +19,29 @@ const ENABLED_THINKING_MODEL_IDS = new Set([
     "claude-haiku-4-5",
 ]);
 
-const KIMI_K3_THINKING_LEVEL_MAP = {
-    minimal: "max",
-    low: "max",
-    medium: "max",
-    high: "max",
-    xhigh: "max",
-    max: "max",
-} as const;
+type ThinkingLevelMap = Record<"minimal" | "low" | "medium" | "high" | "xhigh" | "max", string>;
+
+// Upstreams that only accept a subset of reasoning_effort values; pi's levels are mapped
+// onto the nearest accepted one. kimi-k3 probed 2026-08-13, qwen3.8-max-free 2026-08-17
+// (its paid variant accepts everything, only the free route is restricted).
+const MODEL_THINKING_LEVEL_MAPS: Record<string, ThinkingLevelMap> = {
+    "moonshotai/kimi-k3": {
+        minimal: "max",
+        low: "max",
+        medium: "max",
+        high: "max",
+        xhigh: "max",
+        max: "max",
+    },
+    "qwen/qwen3.8-max-free": {
+        minimal: "low",
+        low: "low",
+        medium: "medium",
+        high: "xhigh",
+        xhigh: "xhigh",
+        max: "xhigh",
+    },
+};
 
 export type TokenRouterProviderModel = {
     id: string;
@@ -112,14 +127,14 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         apiKey: PROVIDER_API_KEY_ENV,
         authHeader: true,
         models: models.map((m) => {
-            const isKimiK3 = m.id === "moonshotai/kimi-k3";
+            const thinkingLevelMap = MODEL_THINKING_LEVEL_MAPS[m.id];
             const api = selectApi(m.id);
             return {
                 ...m,
                 api,
                 maxTokens: resolveMaxTokens(m.contextWindow, m.maxTokens),
                 ...(api === "anthropic-messages" ? { baseUrl: ANTHROPIC_BASE_URL } : {}),
-                ...(isKimiK3 ? { thinkingLevelMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
+                ...(thinkingLevelMap ? { thinkingLevelMap } : {}),
                 compat: {
                     // TokenRouter upstreams reject the "developer" role, so send the system prompt
                     // as "system". Verified accepted by every model that serves requests at all.
@@ -127,7 +142,7 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
                     ...(api === "anthropic-messages" && !ENABLED_THINKING_MODEL_IDS.has(m.id)
                         ? { forceAdaptiveThinking: true }
                         : {}),
-                    ...(isKimiK3 ? { reasoningEffortMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
+                    ...(thinkingLevelMap ? { reasoningEffortMap: thinkingLevelMap } : {}),
                 },
             };
         }),
