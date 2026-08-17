@@ -35,9 +35,24 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
                 supported_endpoint_types: ["openai"],
                 tags: "Image",
             },
+            {
+                id: "google/gemini-embedding-2",
+                supported_endpoint_types: ["openai"],
+                tags: "",
+            },
         ],
     },
     {
+        google: {
+            models: {
+                // models.dev reports zero limits for embedding models; the mapper must
+                // fall back to defaults or the cached catalog fails its own validation.
+                "google/gemini-embedding-2": {
+                    name: "Gemini Embedding 2",
+                    limit: { context: 0, output: 0 },
+                },
+            },
+        },
         anthropic: {
             models: {
                 "anthropic/claude-sonnet-4": {
@@ -87,7 +102,7 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
     },
 );
 
-assert.equal(mappedModels.length, 3);
+assert.equal(mappedModels.length, 4);
 assert.deepEqual(mappedModels[0], {
     id: "anthropic/claude-sonnet-4",
     name: "Claude Sonnet 4 from models.dev",
@@ -118,6 +133,20 @@ assertApprox(mappedModels[1]?.cost.cacheWrite ?? 0, 0.2);
 assert.deepEqual(mappedModels[2], {
     id: "defaults/tokenrouter-only",
     name: "defaults/tokenrouter-only",
+    reasoning: false,
+    input: ["text"],
+    cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+    },
+    contextWindow: 4096,
+    maxTokens: 4096,
+} satisfies TokenRouterProviderModel);
+assert.deepEqual(mappedModels[3], {
+    id: "google/gemini-embedding-2",
+    name: "Gemini Embedding 2",
     reasoning: false,
     input: ["text"],
     cost: {
@@ -166,10 +195,11 @@ assert.equal(providerConfig.api, "openai-completions");
 assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
 assert.equal("oauth" in providerConfig, false);
-assert.equal(providerConfig.models.length, 3);
+assert.equal(providerConfig.models.length, 4);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
+assert.equal(providerConfig.models[3]!.api, "openai-completions");
 
 // The Anthropic client appends /v1/messages, so those models must drop /v1 from the base URL.
 assert.equal(providerConfig.models[0]!.baseUrl, "https://api.tokenrouter.com");
@@ -208,41 +238,34 @@ assert.deepEqual(
 );
 assert.equal("thinkingLevelMap" in grokProviderConfig.models[0]!, false);
 
-// Claude 5 and Opus 4.7+ reject thinking.type "enabled" upstream and need adaptive thinking,
-// while Sonnet 4.5 and Haiku 4.5 reject adaptive, so the flag is per model.
-const claudeProviderConfig = createTokenRouterProviderConfig([
-    {
-        id: "anthropic/claude-sonnet-5",
-        name: "Claude Sonnet 5",
+// Legacy Claude models reject thinking.type "adaptive" and need "enabled"; every other
+// Claude model, including ones unknown at release time, defaults to adaptive so newly
+// discovered models work without a code change. Non-Claude models never get the flag.
+function claudeModel(id: string): TokenRouterProviderModel {
+    return {
+        id,
+        name: id,
         reasoning: true,
         input: ["text", "image"],
         cost: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
         contextWindow: 1000000,
         maxTokens: 128000,
-    },
-    {
-        id: "anthropic/claude-sonnet-4.5",
-        name: "Claude Sonnet 4.5",
-        reasoning: true,
-        input: ["text", "image"],
-        cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-        contextWindow: 200000,
-        maxTokens: 64000,
-    },
-]);
+    };
+}
 
-assert.equal(
-    "compat" in claudeProviderConfig.models[0]!
-        ? (claudeProviderConfig.models[0]!.compat as { forceAdaptiveThinking?: boolean }).forceAdaptiveThinking
-        : undefined,
-    true,
-);
-assert.equal(
-    "compat" in claudeProviderConfig.models[1]!
-        ? "forceAdaptiveThinking" in claudeProviderConfig.models[1]!.compat
-        : true,
-    false,
-);
+function forceAdaptiveFor(id: string): boolean {
+    const model = createTokenRouterProviderConfig([claudeModel(id)]).models[0]!;
+    return "compat" in model && (model.compat as { forceAdaptiveThinking?: boolean }).forceAdaptiveThinking === true;
+}
+
+assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-5"), true);
+assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-6"), true);
+assert.equal(forceAdaptiveFor("claude-opus-4-8-m-aws"), true);
+assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-4.5"), false);
+assert.equal(forceAdaptiveFor("anthropic/claude-haiku-4.5"), false);
+assert.equal(forceAdaptiveFor("claude-haiku-4-5"), false);
+assert.equal(forceAdaptiveFor("openai/gpt-5.5"), false);
+assert.equal(forceAdaptiveFor("moonshotai/kimi-k3"), false);
 
 const kimiProviderConfig = createTokenRouterProviderConfig([
     {

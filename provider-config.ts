@@ -5,15 +5,18 @@ export const PROVIDER_NAME = "tokenrouter";
 export const PROVIDER_DISPLAY_NAME = "TokenRouter";
 export const PROVIDER_API_KEY_ENV = "$TOKENROUTER_API_KEY";
 
-// Probed against /v1/messages on 2026-08-13: these reject thinking.type "enabled" and need
-// adaptive thinking, while Sonnet 4.5, Sonnet 4, Haiku 4.5, Opus 4.5, and Opus 4.6 need "enabled".
-// Refresh by sending each Claude model both shapes when TokenRouter adds one.
-const ADAPTIVE_THINKING_MODEL_IDS = new Set([
-    "anthropic/claude-fable-5",
-    "anthropic/claude-opus-4.7",
-    "anthropic/claude-opus-4.8",
-    "anthropic/claude-opus-5",
-    "anthropic/claude-sonnet-5",
+// Probed against /v1/messages on 2026-08-13 and 2026-08-17: these legacy models reject
+// thinking.type "adaptive" and need "enabled". Every newer Claude generation accepts
+// adaptive, and upstream keeps enabling it on more models (Sonnet 4 and Opus 4.6 rejected
+// it on 08-13, accept it on 08-17), so Claude models outside this list default to adaptive
+// and newly discovered ones work without a code change.
+const ENABLED_THINKING_MODEL_IDS = new Set([
+    "anthropic/claude-haiku-4.5",
+    "anthropic/claude-opus-4.5",
+    "anthropic/claude-opus-4.6",
+    "anthropic/claude-sonnet-4",
+    "anthropic/claude-sonnet-4.5",
+    "claude-haiku-4-5",
 ]);
 
 const KIMI_K3_THINKING_LEVEL_MAP = {
@@ -121,7 +124,9 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
                     // TokenRouter upstreams reject the "developer" role, so send the system prompt
                     // as "system". Verified accepted by every model that serves requests at all.
                     supportsDeveloperRole: false,
-                    ...(ADAPTIVE_THINKING_MODEL_IDS.has(m.id) ? { forceAdaptiveThinking: true } : {}),
+                    ...(api === "anthropic-messages" && !ENABLED_THINKING_MODEL_IDS.has(m.id)
+                        ? { forceAdaptiveThinking: true }
+                        : {}),
                     ...(isKimiK3 ? { reasoningEffortMap: KIMI_K3_THINKING_LEVEL_MAP } : {}),
                 },
             };

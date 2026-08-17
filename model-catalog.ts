@@ -88,6 +88,12 @@ function parseOpenRouterPrice(price?: string): number {
     return Number.isFinite(parsed) ? parsed * 1_000_000 : 0;
 }
 
+// models.dev reports zero limits for embedding models; a non-positive limit would make
+// the cached catalog fail its own validation, so treat it as absent.
+function firstPositive(...values: (number | undefined)[]): number | undefined {
+    return values.find((value) => typeof value === "number" && Number.isFinite(value) && value > 0);
+}
+
 function buildModelsDevLookup(payload: ModelsDevPayload): Map<string, ModelsDevModel> {
     const lookup = new Map<string, ModelsDevModel>();
     for (const provider of Object.values(payload)) {
@@ -142,10 +148,10 @@ export function mapTokenRouterCatalogToProviderModels(
                         parseOpenRouterPrice(openRouterModel?.pricing?.input_cache_write),
                 },
                 contextWindow:
-                    modelsDevModel?.limit?.context ?? openRouterModel?.context_length ?? DEFAULT_CONTEXT_WINDOW,
+                    firstPositive(modelsDevModel?.limit?.context, openRouterModel?.context_length) ??
+                    DEFAULT_CONTEXT_WINDOW,
                 maxTokens:
-                    modelsDevModel?.limit?.output ??
-                    openRouterModel?.top_provider?.max_completion_tokens ??
+                    firstPositive(modelsDevModel?.limit?.output, openRouterModel?.top_provider?.max_completion_tokens) ??
                     DEFAULT_MAX_TOKENS,
             };
         });
