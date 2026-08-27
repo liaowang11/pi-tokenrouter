@@ -19,7 +19,7 @@ const ENABLED_THINKING_MODEL_IDS = new Set([
     "claude-haiku-4-5",
 ]);
 
-type ThinkingLevelMap = Record<"minimal" | "low" | "medium" | "high" | "xhigh" | "max", string>;
+type ThinkingLevelMap = Partial<Record<"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max", string>>;
 
 // Upstreams that only accept a subset of reasoning_effort values; pi's levels are mapped
 // onto the nearest accepted one. kimi-k3 probed 2026-08-13, qwen3.8-max-free 2026-08-17
@@ -42,6 +42,26 @@ const MODEL_THINKING_LEVEL_MAPS: Record<string, ThinkingLevelMap> = {
         max: "xhigh",
     },
 };
+
+// Probed against /v1/responses on 2026-08-27: gpt-5.2 through gpt-5.6 answer HTTP 400 for
+// reasoning.effort "minimal" (supported values are none/low/medium/high/xhigh) and accept
+// "xhigh"; gpt-5 rejects both; gpt-5-mini accepts "minimal" but rejects "xhigh"; the nano
+// and pro variants accept both, and mapping their "minimal" onto "low" stays valid.
+// pi only offers "xhigh" when a thinkingLevelMap declares it and sends undeclared levels
+// verbatim, so "minimal" must map onto "low" and "xhigh" must be declared where accepted.
+const GPT_MINIMAL_TO_XHIGH_THINKING_LEVEL_MAP: ThinkingLevelMap = { minimal: "low", xhigh: "xhigh" };
+const GPT_MINIMAL_ONLY_THINKING_LEVEL_MAP: ThinkingLevelMap = { minimal: "low" };
+const GPT_XHIGH_FAMILY_PREFIXES = ["openai/gpt-5.2", "openai/gpt-5.4", "openai/gpt-5.5", "openai/gpt-5.6"];
+
+function resolveThinkingLevelMap(modelId: string): ThinkingLevelMap | undefined {
+    const exact = MODEL_THINKING_LEVEL_MAPS[modelId];
+    if (exact) return exact;
+    if (modelId === "openai/gpt-5") return GPT_MINIMAL_ONLY_THINKING_LEVEL_MAP;
+    if (GPT_XHIGH_FAMILY_PREFIXES.some((prefix) => modelId.startsWith(prefix))) {
+        return GPT_MINIMAL_TO_XHIGH_THINKING_LEVEL_MAP;
+    }
+    return undefined;
+}
 
 export type TokenRouterProviderModel = {
     id: string;
@@ -127,7 +147,7 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         apiKey: PROVIDER_API_KEY_ENV,
         authHeader: true,
         models: models.map((m) => {
-            const thinkingLevelMap = MODEL_THINKING_LEVEL_MAPS[m.id];
+            const thinkingLevelMap = resolveThinkingLevelMap(m.id);
             const api = selectApi(m.id);
             return {
                 ...m,

@@ -414,6 +414,30 @@ assert.deepEqual(
     },
 );
 
+// --- GPT Responses-API thinking levels ---
+
+// Probed against /v1/responses on 2026-08-27: gpt-5.2 through gpt-5.6 answer HTTP 400
+// for reasoning.effort "minimal" and accept "xhigh"; gpt-5 rejects both; gpt-5-mini
+// accepts "minimal" but rejects "xhigh"; the nano/pro variants accept both (mapping
+// their "minimal" onto "low" stays valid). pi only offers "xhigh" when a
+// thinkingLevelMap declares it and sends undeclared levels verbatim, so "minimal"
+// must map onto "low" and "xhigh" must be declared for the families that take it.
+function gptThinkingMapFor(id: string): Record<string, unknown> | undefined {
+    const model = createTokenRouterProviderConfig([claudeModel(id)]).models[0]!;
+    return "thinkingLevelMap" in model
+        ? (model as { thinkingLevelMap?: Record<string, unknown> }).thinkingLevelMap
+        : undefined;
+}
+
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-sol"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-luna"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.5"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.4-mini"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.2"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5"), { minimal: "low" });
+assert.equal(gptThinkingMapFor("openai/gpt-5-mini"), undefined);
+assert.equal(gptThinkingMapFor("openai/gpt-4o-mini"), undefined);
+
 // --- ensureToolSchemaRequired ---
 
 // x-ai upstreams reject a function schema whose parameters omit "required".
