@@ -338,6 +338,8 @@ function forceAdaptiveFor(id: string): boolean {
 assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-5"), true);
 assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-6"), true);
 assert.equal(forceAdaptiveFor("claude-opus-4-8-m-aws"), true);
+assert.equal(forceAdaptiveFor("anthropic/claude-fable-5"), true);
+assert.equal(forceAdaptiveFor("anthropic/claude-opus-4.6"), true);
 assert.equal(forceAdaptiveFor("anthropic/claude-sonnet-4.5"), false);
 assert.equal(forceAdaptiveFor("anthropic/claude-haiku-4.5"), false);
 assert.equal(forceAdaptiveFor("claude-haiku-4-5"), false);
@@ -429,14 +431,43 @@ function gptThinkingMapFor(id: string): Record<string, unknown> | undefined {
         : undefined;
 }
 
-assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-sol"), { minimal: "low", xhigh: "xhigh" });
-assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-luna"), { minimal: "low", xhigh: "xhigh" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-sol"), { minimal: "low", xhigh: "xhigh", max: "max" });
+assert.deepEqual(gptThinkingMapFor("openai/gpt-5.6-luna"), { minimal: "low", xhigh: "xhigh", max: "max" });
 assert.deepEqual(gptThinkingMapFor("openai/gpt-5.5"), { minimal: "low", xhigh: "xhigh" });
 assert.deepEqual(gptThinkingMapFor("openai/gpt-5.4-mini"), { minimal: "low", xhigh: "xhigh" });
 assert.deepEqual(gptThinkingMapFor("openai/gpt-5.2"), { minimal: "low", xhigh: "xhigh" });
 assert.deepEqual(gptThinkingMapFor("openai/gpt-5"), { minimal: "low" });
 assert.equal(gptThinkingMapFor("openai/gpt-5-mini"), undefined);
 assert.equal(gptThinkingMapFor("openai/gpt-4o-mini"), undefined);
+
+// --- Claude adaptive thinking levels ---
+
+// Probed against /v1/messages on 2026-08-27: fable-5, sonnet-5, opus-4.7/4.8/5 (and the
+// fast and m-aws variants) accept adaptive efforts up to xhigh and max; opus-4.6 rejects
+// xhigh but accepts max; the 4.5-and-older generations still take budget thinking
+// (thinking.type enabled), which pi sends for models without forceAdaptiveThinking.
+// pi only offers the xhigh and max levels when a thinkingLevelMap declares them.
+function claudeThinkingMapFor(id: string): Record<string, unknown> | undefined {
+    const model = createTokenRouterProviderConfig([claudeModel(id)]).models[0]!;
+    return "thinkingLevelMap" in model
+        ? (model as { thinkingLevelMap?: Record<string, unknown> }).thinkingLevelMap
+        : undefined;
+}
+
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-fable-5"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-sonnet-5"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-opus-5"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-opus-5-fast"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-opus-4.8"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-opus-4.7"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("claude-opus-4-8-m-aws"), { xhigh: "xhigh", max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-opus-4.6"), { max: "max" });
+assert.deepEqual(claudeThinkingMapFor("anthropic/claude-sonnet-6"), { xhigh: "xhigh", max: "max" });
+assert.equal(claudeThinkingMapFor("anthropic/claude-sonnet-4.5"), undefined);
+assert.equal(claudeThinkingMapFor("anthropic/claude-sonnet-4"), undefined);
+assert.equal(claudeThinkingMapFor("anthropic/claude-haiku-4.5"), undefined);
+assert.equal(claudeThinkingMapFor("anthropic/claude-opus-4.5"), undefined);
+assert.equal(claudeThinkingMapFor("claude-haiku-4-5"), undefined);
 
 // --- ensureToolSchemaRequired ---
 

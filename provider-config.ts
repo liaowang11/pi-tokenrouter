@@ -5,19 +5,41 @@ export const PROVIDER_NAME = "tokenrouter";
 export const PROVIDER_DISPLAY_NAME = "TokenRouter";
 export const PROVIDER_API_KEY_ENV = "$TOKENROUTER_API_KEY";
 
-// Probed against /v1/messages on 2026-08-13 and 2026-08-17: these legacy models reject
-// thinking.type "adaptive" and need "enabled". Every newer Claude generation accepts
-// adaptive, and upstream keeps enabling it on more models (Sonnet 4 and Opus 4.6 rejected
-// it on 08-13, accept it on 08-17), so Claude models outside this list default to adaptive
-// and newly discovered ones work without a code change.
-const ENABLED_THINKING_MODEL_IDS = new Set([
-    "anthropic/claude-haiku-4.5",
-    "anthropic/claude-opus-4.5",
-    "anthropic/claude-opus-4.6",
-    "anthropic/claude-sonnet-4",
-    "anthropic/claude-sonnet-4.5",
-    "claude-haiku-4-5",
-]);
+// Probed against /v1/messages on 2026-08-27: fable-5, sonnet-5, opus-4.7, opus-4.8, opus-5
+// (and the fast and m-aws variants) accept adaptive efforts up to "xhigh" and "max";
+// opus-4.6 rejects "xhigh" but accepts "max". The 4.5-and-older generations (haiku-4.5,
+// opus-4.5, sonnet-4, sonnet-4.5) reject adaptive and still need budget thinking
+// (thinking.type "enabled"), which pi sends for models without forceAdaptiveThinking.
+// pi only offers the xhigh and max levels when a thinkingLevelMap declares them, so every
+// adaptive family needs a map and the forceAdaptiveThinking compat flag.
+const CLAUDE_ADAPTIVE_XHIGH_FAMILIES = ["fable-5", "sonnet-5", "opus-5", "opus-4-8", "opus-4-7"];
+const CLAUDE_ADAPTIVE_MAX_ONLY_FAMILIES = ["opus-4-6", "sonnet-4-6"];
+// Checked after the adaptive families so sonnet-4-5 and sonnet-4-6 are not caught here.
+const CLAUDE_BUDGET_FAMILIES = ["haiku-4-5", "opus-4-5", "sonnet-4"];
+const CLAUDE_XHIGH_MAX_THINKING_LEVEL_MAP: ThinkingLevelMap = { xhigh: "xhigh", max: "max" };
+const CLAUDE_MAX_ONLY_THINKING_LEVEL_MAP: ThinkingLevelMap = { max: "max" };
+
+function normalizeModelIdForFamily(modelId: string): string {
+    return modelId.replace(/[\s_.:]+/g, "-");
+}
+
+function resolveClaudeThinkingLevelMap(modelId: string): ThinkingLevelMap | undefined {
+    if (!modelId.startsWith("anthropic/") && !modelId.startsWith("claude-")) return undefined;
+    const normalized = normalizeModelIdForFamily(modelId);
+    if (CLAUDE_ADAPTIVE_MAX_ONLY_FAMILIES.some((family) => normalized.includes(family))) {
+        return CLAUDE_MAX_ONLY_THINKING_LEVEL_MAP;
+    }
+    if (CLAUDE_ADAPTIVE_XHIGH_FAMILIES.some((family) => normalized.includes(family))) {
+        return CLAUDE_XHIGH_MAX_THINKING_LEVEL_MAP;
+    }
+    if (CLAUDE_BUDGET_FAMILIES.some((family) => normalized.includes(family))) {
+        return undefined;
+    }
+    // Unknown future generations default to adaptive with the full effort ladder, the
+    // same default upstream has shipped with every generation since Opus 4.6, so newly
+    // discovered models work without a code change.
+    return CLAUDE_XHIGH_MAX_THINKING_LEVEL_MAP;
+}
 
 type ThinkingLevelMap = Partial<Record<"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max", string>>;
 
@@ -50,17 +72,19 @@ const MODEL_THINKING_LEVEL_MAPS: Record<string, ThinkingLevelMap> = {
 // pi only offers "xhigh" when a thinkingLevelMap declares it and sends undeclared levels
 // verbatim, so "minimal" must map onto "low" and "xhigh" must be declared where accepted.
 const GPT_MINIMAL_TO_XHIGH_THINKING_LEVEL_MAP: ThinkingLevelMap = { minimal: "low", xhigh: "xhigh" };
+const GPT_5_6_THINKING_LEVEL_MAP: ThinkingLevelMap = { minimal: "low", xhigh: "xhigh", max: "max" };
 const GPT_MINIMAL_ONLY_THINKING_LEVEL_MAP: ThinkingLevelMap = { minimal: "low" };
-const GPT_XHIGH_FAMILY_PREFIXES = ["openai/gpt-5.2", "openai/gpt-5.4", "openai/gpt-5.5", "openai/gpt-5.6"];
+const GPT_XHIGH_FAMILY_PREFIXES = ["openai/gpt-5.2", "openai/gpt-5.4", "openai/gpt-5.5"];
 
 function resolveThinkingLevelMap(modelId: string): ThinkingLevelMap | undefined {
     const exact = MODEL_THINKING_LEVEL_MAPS[modelId];
     if (exact) return exact;
     if (modelId === "openai/gpt-5") return GPT_MINIMAL_ONLY_THINKING_LEVEL_MAP;
+    if (modelId.startsWith("openai/gpt-5.6")) return GPT_5_6_THINKING_LEVEL_MAP;
     if (GPT_XHIGH_FAMILY_PREFIXES.some((prefix) => modelId.startsWith(prefix))) {
         return GPT_MINIMAL_TO_XHIGH_THINKING_LEVEL_MAP;
     }
-    return undefined;
+    return resolveClaudeThinkingLevelMap(modelId);
 }
 
 export type TokenRouterProviderModel = {
@@ -149,6 +173,9 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
         models: models.map((m) => {
             const thinkingLevelMap = resolveThinkingLevelMap(m.id);
             const api = selectApi(m.id);
+            // Claude models in the adaptive families need the flag so pi sends adaptive
+            // effort instead of budget thinking; legacy generations stay on budgets.
+            const forceAdaptiveThinking = api === "anthropic-messages" && resolveClaudeThinkingLevelMap(m.id) !== undefined;
             return {
                 ...m,
                 api,
@@ -159,9 +186,7 @@ export function createTokenRouterProviderConfig(models: TokenRouterProviderModel
                     // TokenRouter upstreams reject the "developer" role, so send the system prompt
                     // as "system". Verified accepted by every model that serves requests at all.
                     supportsDeveloperRole: false,
-                    ...(api === "anthropic-messages" && !ENABLED_THINKING_MODEL_IDS.has(m.id)
-                        ? { forceAdaptiveThinking: true }
-                        : {}),
+                    ...(forceAdaptiveThinking ? { forceAdaptiveThinking } : {}),
                     ...(thinkingLevelMap ? { reasoningEffortMap: thinkingLevelMap } : {}),
                 },
             };
