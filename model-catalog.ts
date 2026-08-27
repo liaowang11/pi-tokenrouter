@@ -96,7 +96,14 @@ function parseTags(tags: string | undefined): Set<string> {
 
 function supportsTextEndpoints(model: TokenRouterCatalogModel): boolean {
     const endpoints = new Set(model.supported_endpoint_types ?? []);
-    return endpoints.has("openai") || endpoints.has("anthropic-compatible") || endpoints.has("anthropic");
+    return (
+        endpoints.has("openai") ||
+        // Newer GPT generations (gpt-5.4 onward, gpt-5.5, gpt-5.6) advertise only this
+        // endpoint; probed on /v1/responses and /v1/chat/completions 2026-08-27.
+        endpoints.has("openai-response") ||
+        endpoints.has("anthropic-compatible") ||
+        endpoints.has("anthropic")
+    );
 }
 
 function isTextCapableTagSet(tags: Set<string>): boolean {

@@ -50,6 +50,11 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
                 supported_endpoint_types: ["openai"],
                 tags: "Text",
             },
+            {
+                id: "openai/gpt-5.6-sol",
+                supported_endpoint_types: ["openai-response"],
+                tags: "Text",
+            },
         ],
     },
     {
@@ -123,7 +128,23 @@ const mappedModels = mapTokenRouterCatalogToProviderModels(
     },
 );
 
-assert.equal(mappedModels.length, 6);
+// Newer GPT generations advertise only the OpenAI Responses endpoint; they must still map.
+assert.deepEqual(mappedModels[6], {
+    id: "openai/gpt-5.6-sol",
+    name: "openai/gpt-5.6-sol",
+    reasoning: false,
+    input: ["text"],
+    cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+    },
+    contextWindow: 131072,
+    maxTokens: 4096,
+} satisfies TokenRouterProviderModel);
+
+assert.equal(mappedModels.length, 7);
 assert.deepEqual(mappedModels[0], {
     id: "anthropic/claude-sonnet-4",
     name: "Claude Sonnet 4 from models.dev",
@@ -248,13 +269,14 @@ assert.equal(providerConfig.api, "openai-completions");
 assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
 assert.equal("oauth" in providerConfig, false);
-assert.equal(providerConfig.models.length, 6);
+assert.equal(providerConfig.models.length, 7);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
 assert.equal(providerConfig.models[2]!.api, "openai-completions");
 assert.equal(providerConfig.models[3]!.api, "openai-completions");
 assert.equal(providerConfig.models[4]!.api, "openai-completions");
 assert.equal(providerConfig.models[5]!.api, "openai-completions");
+assert.equal(providerConfig.models[6]!.api, "openai-responses");
 
 // The Anthropic client appends /v1/messages, so those models must drop /v1 from the base URL.
 assert.equal(providerConfig.models[0]!.baseUrl, "https://api.tokenrouter.com");
