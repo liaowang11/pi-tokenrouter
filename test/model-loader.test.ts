@@ -53,6 +53,15 @@ function fakeFetch(responses: Record<string, unknown>): typeof fetch {
     }) as typeof fetch;
 }
 
+// A fetch that fails only for the given URLs, standing in for a metadata-service outage.
+function fetchFailingOnly(failingUrls: string[], responses: Record<string, unknown> = catalogResponses): typeof fetch {
+    return (async (url: string | URL | Request, init?: RequestInit) => {
+        const key = String(url);
+        if (failingUrls.includes(key)) throw new Error("metadata service down");
+        return fakeFetch(responses)(url as never, init);
+    }) as typeof fetch;
+}
+
 const failingFetch: typeof fetch = async () => {
     throw new Error("network down");
 };
@@ -123,6 +132,110 @@ try {
     });
     assert.equal(emptyLive.source, "cache");
     assert.deepEqual(emptyLive.models, live.models);
+
+    // --- metadata-service outages: TokenRouter's list stays authoritative ---
+
+    // The enrichment payloads need a model both services know, so re-seed them here.
+    const enrichedResponses: Record<string, unknown> = {
+        [TOKENROUTER_MODELS_URL]: {
+            data: [
+                {
+                    id: "anthropic/claude-sonnet-5",
+                    supported_endpoint_types: ["anthropic-compatible"],
+                    tags: "Text, Image",
+                },
+                {
+                    id: "new/metadata-less-model",
+                    supported_endpoint_types: ["openai"],
+                    tags: "Text",
+                },
+            ],
+        },
+        [MODELS_DEV_URL]: {
+            anthropic: {
+                models: {
+                    "anthropic/claude-sonnet-5": {
+                        name: "Claude Sonnet 5",
+                        reasoning: true,
+                        limit: { context: 200000, output: 32000 },
+                        cost: { input: 3, output: 15 },
+                        modalities: { input: ["text", "image"] },
+                    },
+                },
+            },
+        },
+        [OPENROUTER_MODELS_URL]: {
+            data: [
+                {
+                    id: "anthropic/claude-sonnet-5",
+                    name: "Claude Sonnet 5 OR",
+                    supported_parameters: ["tools"],
+                    architecture: { modality: ["text"] },
+                    pricing: { prompt: "0.00001", completion: "0.00002" },
+                    context_length: 1000,
+                    top_provider: { max_completion_tokens: 500 },
+                },
+            ],
+        },
+    };
+
+    // models.dev down: OpenRouter metadata still enriches, source stays live, warning says so.
+    const modelsDevDown = await loadTokenRouterModels({
+        apiKey: "sk-test",
+        cachePath,
+        bundledModels,
+        fetchImpl: fetchFailingOnly([MODELS_DEV_URL], enrichedResponses),
+    });
+    assert.equal(modelsDevDown.source, "live");
+    assert.equal(modelsDevDown.models.length, 2);
+    const modelsDevDownSonnet = modelsDevDown.models.find((m) => m.id === "anthropic/claude-sonnet-5")!;
+    assert.equal(modelsDevDownSonnet.name, "Claude Sonnet 5 OR");
+    assert.equal(modelsDevDownSonnet.contextWindow, 1000);
+    assert.ok(
+        /models\.dev/.test(modelsDevDown.warning ?? ""),
+        `warning should name models.dev: ${modelsDevDown.warning}`,
+    );
+
+    // OpenRouter down: models.dev metadata still enriches.
+    const openRouterDown = await loadTokenRouterModels({
+        apiKey: "sk-test",
+        cachePath,
+        bundledModels,
+        fetchImpl: fetchFailingOnly([OPENROUTER_MODELS_URL], enrichedResponses),
+    });
+    assert.equal(openRouterDown.source, "live");
+    const openRouterDownSonnet = openRouterDown.models.find((m) => m.id === "anthropic/claude-sonnet-5")!;
+    assert.equal(openRouterDownSonnet.name, "Claude Sonnet 5");
+    assert.equal(openRouterDownSonnet.contextWindow, 200000);
+    assert.ok(
+        /openrouter/i.test(openRouterDown.warning ?? ""),
+        `warning should name openrouter: ${openRouterDown.warning}`,
+    );
+
+    // Both metadata services down: TokenRouter's list still wins; previously cached
+    // metadata (from the openRouterDown run above) is preserved for matching models,
+    // defaults cover the rest.
+    const bothDown = await loadTokenRouterModels({
+        apiKey: "sk-test",
+        cachePath,
+        bundledModels,
+        fetchImpl: fetchFailingOnly([MODELS_DEV_URL, OPENROUTER_MODELS_URL], enrichedResponses),
+    });
+    assert.equal(bothDown.source, "live");
+    assert.equal(bothDown.models.length, 2);
+    const bothDownSonnet = bothDown.models.find((m) => m.id === "anthropic/claude-sonnet-5")!;
+    assert.equal(bothDownSonnet.name, "Claude Sonnet 5");
+    assert.equal(bothDownSonnet.contextWindow, 200000);
+    const bothDownNew = bothDown.models.find((m) => m.id === "new/metadata-less-model")!;
+    assert.equal(bothDownNew.contextWindow, 131072);
+    assert.equal(bothDownNew.maxTokens, 4096);
+    assert.equal(bothDownNew.name, "new/metadata-less-model");
+    assert.ok(
+        /models\.dev/.test(bothDown.warning ?? "") && /openrouter/i.test(bothDown.warning ?? ""),
+        `warning should name both services: ${bothDown.warning}`,
+    );
+    // The degraded-but-live catalog still writes the cache for future starts.
+    assert.deepEqual(await readTokenRouterModelsCache(cachePath), bothDown.models);
 
     // A cache with the wrong version is rejected, leaving the bundled snapshot.
     writeFileSync(cachePath, JSON.stringify({ version: 0, models: live.models }));

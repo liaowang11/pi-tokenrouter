@@ -3,8 +3,11 @@
  *
  * Fetches TokenRouter's /v1/models plus the models.dev and OpenRouter catalogs,
  * maps them through mapTokenRouterCatalogToProviderModels, and caches the result
- * on disk. Falls back to the cache when the network fails, and to the bundled
- * snapshot when no valid cache exists.
+ * on disk. TokenRouter's list is authoritative: a metadata-service outage only
+ * degrades enrichment (the other service wins, then cached metadata, then
+ * defaults) instead of failing discovery. Falls back to the cache when
+ * TokenRouter itself fails, and to the bundled snapshot when no valid cache
+ * exists.
  */
 
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
@@ -41,6 +44,25 @@ export type LoadTokenRouterModelsResult = {
     source: TokenRouterModelSource;
     warning?: string;
 };
+
+// Metadata sources consulted independently of TokenRouter's own list.
+const METADATA_SOURCES = [
+    { url: MODELS_DEV_URL, label: "models.dev" },
+    { url: OPENROUTER_MODELS_URL, label: "OpenRouter" },
+] as const;
+
+/**
+ * Reuses the cached enrichment for models the fresh catalog also lists. Only the
+ * metadata fields are carried over; membership comes from the live TokenRouter
+ * list alone, so models that disappeared upstream stay gone.
+ */
+function mergeCachedMetadata(
+    models: TokenRouterProviderModel[],
+    cachedModels: readonly TokenRouterProviderModel[],
+): TokenRouterProviderModel[] {
+    const cachedById = new Map(cachedModels.map((model) => [model.id, model]));
+    return models.map((model) => cachedById.get(model.id) ?? model);
+}
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
@@ -138,19 +160,33 @@ async function fetchLiveModels(
     apiKey: string,
     fetchImpl: typeof fetch,
     timeoutMs: number,
-): Promise<TokenRouterProviderModel[]> {
-    const [tokenRouterPayload, modelsDevPayload, openRouterPayload] = await Promise.all([
-        fetchJson(fetchImpl, TOKENROUTER_MODELS_URL, timeoutMs, apiKey),
-        fetchJson(fetchImpl, MODELS_DEV_URL, timeoutMs),
-        fetchJson(fetchImpl, OPENROUTER_MODELS_URL, timeoutMs),
-    ]);
-    const models = mapTokenRouterCatalogToProviderModels(
-        tokenRouterPayload as TokenRouterCatalogPayload,
-        modelsDevPayload as ModelsDevPayload,
-        openRouterPayload as OpenRouterCatalogPayload,
+    cachedModels: readonly TokenRouterProviderModel[] | undefined,
+): Promise<{ models: TokenRouterProviderModel[]; degradedMetadata: string[] }> {
+    // TokenRouter's own list is required; the metadata services settle independently
+    // so one outage degrades enrichment instead of failing discovery.
+    const tokenRouterPromise = fetchJson(fetchImpl, TOKENROUTER_MODELS_URL, timeoutMs, apiKey);
+    const metadataPromise = Promise.allSettled(
+        METADATA_SOURCES.map((source) => fetchJson(fetchImpl, source.url, timeoutMs)),
     );
+    const [tokenRouterPayload, metadataResults] = await Promise.all([tokenRouterPromise, metadataPromise]);
+
+    const degradedMetadata: string[] = [];
+    const payloads = metadataResults.map((result, index) => {
+        if (result.status === "fulfilled") return result.value as unknown;
+        degradedMetadata.push(METADATA_SOURCES[index]!.label);
+        return index === 0 ? {} : { data: [] };
+    });
+
+    let models = mapTokenRouterCatalogToProviderModels(
+        tokenRouterPayload as TokenRouterCatalogPayload,
+        payloads[0] as ModelsDevPayload,
+        payloads[1] as OpenRouterCatalogPayload,
+    );
+    if (degradedMetadata.length === METADATA_SOURCES.length && cachedModels) {
+        models = mergeCachedMetadata(models, cachedModels);
+    }
     if (models.length === 0) throw new Error("TokenRouter returned an empty model catalog");
-    return models;
+    return { models, degradedMetadata };
 }
 
 export async function loadTokenRouterModels(
@@ -163,21 +199,28 @@ export async function loadTokenRouterModels(
     if (!options.apiKey) {
         liveFailure = "No TokenRouter API key is configured (run /login tokenrouter)";
     } else {
+        // The last cached catalog feeds the both-metadata-down merge below.
+        const cachedModels = await readTokenRouterModelsCache(options.cachePath).catch(() => undefined);
         try {
             // TokenRouter answers 400 intermittently per connection (~1 in 5 measured
             // on 2026-08-17), so one delayed retry covers most transient failures.
-            const models = await fetchLiveModels(options.apiKey, fetchImpl, timeoutMs).catch(async () => {
+            const live = await fetchLiveModels(options.apiKey, fetchImpl, timeoutMs, cachedModels).catch(async () => {
                 await new Promise((resolve) => setTimeout(resolve, options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS));
-                return fetchLiveModels(options.apiKey!, fetchImpl, timeoutMs);
+                return fetchLiveModels(options.apiKey!, fetchImpl, timeoutMs, cachedModels);
             });
+            const warning = live.degradedMetadata.length
+                ? `Could not reach ${live.degradedMetadata.join(" and ")}; model metadata may be incomplete or reused from the last cache.`
+                : undefined;
             try {
-                await writeTokenRouterModelsCache(options.cachePath, models);
-                return { models, source: "live" };
+                await writeTokenRouterModelsCache(options.cachePath, live.models);
+                return { models: live.models, source: "live", warning };
             } catch (error) {
                 return {
-                    models,
+                    models: live.models,
                     source: "live",
-                    warning: `Loaded the live TokenRouter model catalog but could not write ${options.cachePath}: ${errorMessage(error)}`,
+                    warning:
+                        (warning ? `${warning} ` : "") +
+                        `Loaded the live TokenRouter model catalog but could not write ${options.cachePath}: ${errorMessage(error)}`,
                 };
             }
         } catch (error) {
