@@ -163,6 +163,32 @@ export function ensureToolSchemaRequired<T extends ProviderRequestPayload>(paylo
     return patched ? ({ ...payload, tools } as T) : payload;
 }
 
+/**
+ * Model ids that may inline chain-of-thought into `content` unless the request asks
+ * for a split. Scoped to reasoning models on the OpenAI-completions API: MiniMax and
+ * z.ai GLM routes were reported mixing reasoning into the answer on TokenRouter, and
+ * `reasoning_split: true` moves it to `reasoning_content`, which pi parses into a
+ * thinking block. Anthropic-messages and openai-responses models have native reasoning
+ * channels and different payload shapes, so they never need it.
+ */
+export function selectReasoningSplitModelIds(models: TokenRouterProviderModel[]): Set<string> {
+    return new Set(models.filter((m) => m.reasoning && selectApi(m.id) === "openai-completions").map((m) => m.id));
+}
+
+/**
+ * Adds `reasoning_split: true` to completions payloads for the models that need it.
+ * TokenRouter accepts the parameter on routes that ignore it (verified on
+ * z-ai/glm-5.3-free, which splits by default), so over-sending is harmless.
+ */
+export function ensureReasoningSplit<T extends ProviderRequestPayload & { reasoning_split?: unknown }>(
+    payload: T,
+    reasoningSplitModelIds: ReadonlySet<string>,
+): T {
+    if (typeof payload.model !== "string" || !reasoningSplitModelIds.has(payload.model)) return payload;
+    if (payload.reasoning_split !== undefined) return payload;
+    return { ...payload, reasoning_split: true };
+}
+
 export function createTokenRouterProviderConfig(models: TokenRouterProviderModel[]) {
     return {
         name: PROVIDER_DISPLAY_NAME,

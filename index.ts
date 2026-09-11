@@ -23,13 +23,19 @@ import { loadTokenRouterModels, readTokenRouterModelsCache, type LoadTokenRouter
 import { TOKENROUTER_MODELS } from "./models.generated.js";
 import {
     createTokenRouterProviderConfig,
+    ensureReasoningSplit,
     ensureToolSchemaRequired,
     PROVIDER_NAME,
+    selectReasoningSplitModelIds,
     type ProviderRequestPayload,
 } from "./provider-config.js";
 
 export default async function(pi: ExtensionAPI) {
-    pi.on("before_provider_request", (event) => ensureToolSchemaRequired(event.payload as ProviderRequestPayload));
+    // Kept in sync with the registered catalog so the payload hook always matches it.
+    let reasoningSplitModelIds = new Set<string>();
+    const applyPayloadCompat = (payload: ProviderRequestPayload): ProviderRequestPayload =>
+        ensureReasoningSplit(ensureToolSchemaRequired(payload), reasoningSplitModelIds);
+    pi.on("before_provider_request", (event) => applyPayloadCompat(event.payload as ProviderRequestPayload));
 
     const cachePath = join(getAgentDir(), "tokenrouter-models.json");
 
@@ -37,6 +43,7 @@ export default async function(pi: ExtensionAPI) {
     // the refresh below replaces them once discovery succeeds.
     const initialModels = await readTokenRouterModelsCache(cachePath).catch(() => TOKENROUTER_MODELS);
     pi.registerProvider(PROVIDER_NAME, createTokenRouterProviderConfig(initialModels));
+    reasoningSplitModelIds = selectReasoningSplitModelIds(initialModels);
     let registeredModelsJson = JSON.stringify(initialModels);
 
     type RefreshResult = LoadTokenRouterModelsResult & { changed: boolean };
@@ -53,6 +60,7 @@ export default async function(pi: ExtensionAPI) {
             if (!changed) return { ...result, changed };
             try {
                 pi.registerProvider(PROVIDER_NAME, createTokenRouterProviderConfig(result.models));
+                reasoningSplitModelIds = selectReasoningSplitModelIds(result.models);
                 registeredModelsJson = modelsJson;
                 return { ...result, changed };
             } catch {

@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { mapTokenRouterCatalogToProviderModels } from "../model-catalog.js";
 import {
     createTokenRouterProviderConfig,
+    ensureReasoningSplit,
     ensureToolSchemaRequired,
     resolveMaxTokens,
     selectApi,
+    selectReasoningSplitModelIds,
     type TokenRouterProviderModel,
 } from "../provider-config.js";
 
@@ -511,6 +513,49 @@ assert.equal(ensureToolSchemaRequired(otherPayload), otherPayload);
 // Payloads without tools pass through unchanged.
 const toollessPayload = { model: "x-ai/grok-4.6" };
 assert.equal(ensureToolSchemaRequired(toollessPayload), toollessPayload);
+
+// --- ensureReasoningSplit ---
+
+// Some TokenRouter upstreams (reported for MiniMax and z.ai GLM) inline
+// chain-of-thought into `content` unless the request asks for a split via
+// `reasoning_split: true`; the gateway then routes it to `reasoning_content`, which
+// pi parses into a thinking block. Only reasoning models on the OpenAI-completions API
+// need it: Anthropic and Responses routes have native reasoning channels.
+const splitCatalogModels: TokenRouterProviderModel[] = [
+    claudeModel("MiniMax-M3"),
+    claudeModel("z-ai/glm-5.3"),
+    claudeModel("z-ai/glm-5.3-free"),
+    { ...claudeModel("google/gemini-3.5-flash"), reasoning: false },
+    claudeModel("anthropic/claude-sonnet-5"),
+    claudeModel("openai/gpt-5.5"),
+];
+const reasoningSplitIds = selectReasoningSplitModelIds(splitCatalogModels);
+assert.deepEqual([...reasoningSplitIds].sort(), ["MiniMax-M3", "z-ai/glm-5.3", "z-ai/glm-5.3-free"]);
+
+const minimaxPayload = { model: "MiniMax-M3", messages: [{ role: "user", content: "hi" }] };
+const split = ensureReasoningSplit(minimaxPayload, reasoningSplitIds);
+assert.equal(split.reasoning_split, true);
+assert.equal(split.model, "MiniMax-M3");
+assert.equal(split.messages, minimaxPayload.messages);
+// The caller's payload must not be mutated in place.
+assert.equal("reasoning_split" in minimaxPayload, false);
+
+// Non-reasoning and non-completions models are left untouched, same object back.
+const geminiPayload = { model: "google/gemini-3.5-flash", messages: [] };
+assert.equal(ensureReasoningSplit(geminiPayload, reasoningSplitIds), geminiPayload);
+const claudePayload = { model: "anthropic/claude-sonnet-5", system: [], messages: [] };
+assert.equal(ensureReasoningSplit(claudePayload, reasoningSplitIds), claudePayload);
+
+// An explicit reasoning_split from a later handler or the model itself is respected.
+const explicitOff = { model: "z-ai/glm-5.3", messages: [], reasoning_split: false };
+assert.equal(ensureReasoningSplit(explicitOff, reasoningSplitIds), explicitOff);
+
+// The registered models feed the id set the payload hook uses.
+const splitProviderConfig = createTokenRouterProviderConfig(splitCatalogModels);
+assert.deepEqual(
+    [...selectReasoningSplitModelIds(splitProviderConfig.models as unknown as TokenRouterProviderModel[])].sort(),
+    ["MiniMax-M3", "z-ai/glm-5.3", "z-ai/glm-5.3-free"],
+);
 
 // The cap must reach the registered models, not just the helper.
 const cappedProviderConfig = createTokenRouterProviderConfig([
