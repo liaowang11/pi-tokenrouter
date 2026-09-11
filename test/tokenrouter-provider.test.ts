@@ -516,10 +516,10 @@ assert.equal(ensureToolSchemaRequired(toollessPayload), toollessPayload);
 
 // --- ensureReasoningSplit ---
 
-// Some TokenRouter upstreams (reported for MiniMax and z.ai GLM) inline
-// chain-of-thought into `content` unless the request asks for a split via
-// `reasoning_split: true`; the gateway then routes it to `reasoning_content`, which
-// pi parses into a thinking block. Only reasoning models on the OpenAI-completions API
+// MiniMax-M3 streams `<think>`-wrapped reasoning inside `content` unless the request
+// asks for a split via `reasoning_split: true`; the gateway then returns
+// `reasoning_content` (pi parses it into a thinking block) plus `reasoning_details`
+// (pi retains it for replay). Only reasoning models on the OpenAI-completions API
 // need it: Anthropic and Responses routes have native reasoning channels.
 const splitCatalogModels: TokenRouterProviderModel[] = [
     claudeModel("MiniMax-M3"),

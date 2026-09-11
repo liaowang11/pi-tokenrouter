@@ -165,10 +165,11 @@ export function ensureToolSchemaRequired<T extends ProviderRequestPayload>(paylo
 
 /**
  * Model ids that may inline chain-of-thought into `content` unless the request asks
- * for a split. Scoped to reasoning models on the OpenAI-completions API: MiniMax and
- * z.ai GLM routes were reported mixing reasoning into the answer on TokenRouter, and
- * `reasoning_split: true` moves it to `reasoning_content`, which pi parses into a
- * thinking block. Anthropic-messages and openai-responses models have native reasoning
+ * for a split. Scoped to reasoning models on the OpenAI-completions API: MiniMax-M3
+ * streams `<think>`-wrapped reasoning inside `content` without it (verified
+ * 2026-09-11), while `reasoning_split: true` returns `reasoning_content` (which pi
+ * parses into a thinking block) plus `reasoning_details` (which pi retains for
+ * replay). Anthropic-messages and openai-responses models have native reasoning
  * channels and different payload shapes, so they never need it.
  */
 export function selectReasoningSplitModelIds(models: TokenRouterProviderModel[]): Set<string> {

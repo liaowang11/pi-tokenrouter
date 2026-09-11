@@ -40,7 +40,7 @@ export TOKENROUTER_API_KEY=sk-...
 
 ## Reasoning
 
-Reasoning models routed through TokenRouter's OpenAI-completions API get `reasoning_split: true` on every request. Some upstreams (reported for MiniMax and z.ai GLM) otherwise inline their chain-of-thought into the answer text; with the split, TokenRouter returns it as `reasoning_content`, which pi shows as a separate thinking block. Routes that already split by default (verified on `z-ai/glm-5.3-free`) ignore the parameter. Anthropic and OpenAI Responses models are unaffected — those APIs have native reasoning channels.
+Reasoning models routed through TokenRouter's OpenAI-completions API get `reasoning_split: true` on every request. Without it, MiniMax-M3 streams its chain-of-thought inline in `content` wrapped in literal `<think>` tags (verified 2026-09-11), polluting the answer; with the split, TokenRouter returns it as `reasoning_content` plus `reasoning_details`, which pi shows as a separate thinking block and retains for replay respectively. Routes that already split by default (verified on `z-ai/glm-5.3` paid and free) ignore the parameter. Anthropic and OpenAI Responses models are unaffected — those APIs have native reasoning channels.
 
 Displayed prices are estimates borrowed from models.dev and OpenRouter; TokenRouter's actual billing for a route can differ.
 
