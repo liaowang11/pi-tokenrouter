@@ -40,6 +40,14 @@
     "@mariozechner/pi-ai": ">=0.70.0",
     "@mariozechner/pi-coding-agent": ">=0.70.0"
   },
+  "peerDependenciesMeta": {
+    "@mariozechner/pi-ai": {
+      "optional": true
+    },
+    "@mariozechner/pi-coding-agent": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@mariozechner/pi-ai": "^0.70.0",
     "@mariozechner/pi-coding-agent": "^0.70.0",
