@@ -233,3 +233,29 @@ export function createTokenRouterProviderConfig(
         }),
     };
 }
+
+type OmpLoginCallbacks = { onPrompt: (prompt: { message: string }) => Promise<string> };
+
+/**
+ * omp ranks a provider's configured apiKey above /login credentials and never falls
+ * through, so any key reference there makes `/login tokenrouter` a no-op. Registering an
+ * `oauth` login instead lets omp store the pasted key as a login credential (its login
+ * flow persists a returned string as an API key). An exported TOKENROUTER_API_KEY keeps
+ * the config key, so the variable stays authoritative as it is in pi. pi's own oauth
+ * login expects token credentials, so this is applied only under omp.
+ */
+export function withOmpLogin<T extends { apiKey: string }>(
+    config: T,
+    env: Record<string, string | undefined> = process.env,
+): Omit<T, "apiKey"> & { apiKey?: string; oauth?: { name: string; login(callbacks: OmpLoginCallbacks): Promise<string> } } {
+    if (env.TOKENROUTER_API_KEY) return config;
+    const { apiKey: _apiKey, ...rest } = config;
+    return {
+        ...rest,
+        oauth: {
+            name: PROVIDER_DISPLAY_NAME,
+            login: async (callbacks: OmpLoginCallbacks) =>
+                (await callbacks.onPrompt({ message: "Paste your TokenRouter API key" })).trim(),
+        },
+    };
+}

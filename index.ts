@@ -28,9 +28,22 @@ import {
     PROVIDER_NAME,
     selectReasoningSplitModelIds,
     type ProviderRequestPayload,
+    type TokenRouterProviderModel,
+    withOmpLogin,
 } from "./provider-config.js";
 
+// omp's extension API adds methods pi does not have; this one marks the omp host.
+function isOmpHost(pi: ExtensionAPI): boolean {
+    return "registerComposerShape" in pi;
+}
+
 export default async function(pi: ExtensionAPI) {
+    const providerConfig = (models: TokenRouterProviderModel[]) => {
+        const config = createTokenRouterProviderConfig(models);
+        // pi's ProviderConfig types oauth.login as returning token credentials; omp also
+        // accepts a plain key string, which is what withOmpLogin returns.
+        return (isOmpHost(pi) ? withOmpLogin(config) : config) as typeof config;
+    };
     // Kept in sync with the registered catalog so the payload hook always matches it.
     let reasoningSplitModelIds = new Set<string>();
     const applyPayloadCompat = (payload: ProviderRequestPayload): ProviderRequestPayload =>
@@ -42,7 +55,7 @@ export default async function(pi: ExtensionAPI) {
     // Register immediately so models are available offline and before login;
     // the refresh below replaces them once discovery succeeds.
     const initialModels = await readTokenRouterModelsCache(cachePath).catch(() => TOKENROUTER_MODELS);
-    pi.registerProvider(PROVIDER_NAME, createTokenRouterProviderConfig(initialModels));
+    pi.registerProvider(PROVIDER_NAME, providerConfig(initialModels));
     reasoningSplitModelIds = selectReasoningSplitModelIds(initialModels);
     let registeredModelsJson = JSON.stringify(initialModels);
 
@@ -59,7 +72,7 @@ export default async function(pi: ExtensionAPI) {
             const changed = modelsJson !== registeredModelsJson;
             if (!changed) return { ...result, changed };
             try {
-                pi.registerProvider(PROVIDER_NAME, createTokenRouterProviderConfig(result.models));
+                pi.registerProvider(PROVIDER_NAME, providerConfig(result.models));
                 reasoningSplitModelIds = selectReasoningSplitModelIds(result.models);
                 registeredModelsJson = modelsJson;
                 return { ...result, changed };

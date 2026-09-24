@@ -8,6 +8,7 @@ import {
     selectApi,
     selectReasoningSplitModelIds,
     type TokenRouterProviderModel,
+    withOmpLogin,
 } from "../provider-config.js";
 
 function assertApprox(actual: number, expected: number): void {
@@ -275,6 +276,20 @@ assert.equal(providerConfig.authHeader, true);
 assert.equal(createTokenRouterProviderConfig(mappedModels, { TOKENROUTER_API_KEY: "sk-env" }).apiKey, "sk-env");
 assert.equal(createTokenRouterProviderConfig(mappedModels, { TOKENROUTER_API_KEY: "" }).apiKey, "$TOKENROUTER_API_KEY");
 assert.equal("oauth" in providerConfig, false);
+
+// omp ranks a configured apiKey above /login credentials, so under omp the key reference
+// gives way to a login flow whose pasted key omp stores as a login credential.
+const ompLoginConfig = withOmpLogin(createTokenRouterProviderConfig(mappedModels, {}), {});
+assert.equal("apiKey" in ompLoginConfig, false);
+assert.equal(ompLoginConfig.oauth?.name, "TokenRouter");
+assert.equal(ompLoginConfig.models.length, 7);
+assert.equal(await ompLoginConfig.oauth?.login({ onPrompt: async () => "  sk-login\n" }), "sk-login");
+// An exported TOKENROUTER_API_KEY stays authoritative, as it is in pi.
+const ompEnvConfig = withOmpLogin(createTokenRouterProviderConfig(mappedModels, { TOKENROUTER_API_KEY: "sk-env" }), {
+    TOKENROUTER_API_KEY: "sk-env",
+});
+assert.equal(ompEnvConfig.apiKey, "sk-env");
+assert.equal("oauth" in ompEnvConfig, false);
 assert.equal(providerConfig.models.length, 7);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");
 assert.equal(providerConfig.models[1]!.api, "openai-completions");
