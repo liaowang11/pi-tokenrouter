@@ -263,13 +263,17 @@ assert.equal(resolveMaxTokens(8192, 65536), 8192); // never exceed the window
 
 // --- provider config ---
 
-const providerConfig = createTokenRouterProviderConfig(mappedModels);
+const providerConfig = createTokenRouterProviderConfig(mappedModels, {});
 
 assert.equal(providerConfig.name, "TokenRouter");
 assert.equal(providerConfig.baseUrl, "https://api.tokenrouter.com/v1");
 assert.equal(providerConfig.api, "openai-completions");
 assert.equal(providerConfig.apiKey, "$TOKENROUTER_API_KEY");
 assert.equal(providerConfig.authHeader, true);
+// omp resolves apiKey by exact env-var name and would send "$TOKENROUTER_API_KEY" as the
+// key, so a set variable is passed through as its value.
+assert.equal(createTokenRouterProviderConfig(mappedModels, { TOKENROUTER_API_KEY: "sk-env" }).apiKey, "sk-env");
+assert.equal(createTokenRouterProviderConfig(mappedModels, { TOKENROUTER_API_KEY: "" }).apiKey, "$TOKENROUTER_API_KEY");
 assert.equal("oauth" in providerConfig, false);
 assert.equal(providerConfig.models.length, 7);
 assert.equal(providerConfig.models[0]!.api, "anthropic-messages");

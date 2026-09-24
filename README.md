@@ -31,6 +31,10 @@ export TOKENROUTER_API_KEY=sk-...
 # "tokenrouter": { "type": "api_key", "key": "sk-..." }
 ```
 
+### oh-my-pi (omp)
+
+The extension also loads in [omp](https://github.com/can1357/oh-my-pi) (`omp -e /path/to/pi-tokenrouter`). omp ranks the provider's configured key above `/login` credentials, so `/login tokenrouter` has no effect there: set `TOKENROUTER_API_KEY` or pass `--api-key`. omp takes thinking levels from its own model catalog and ignores this extension's per-model `thinkingLevelMap` and `forceAdaptiveThinking`; `reasoningEffortMap` still applies.
+
 ## How it works
 
 1. Registers TokenRouter as an API-key provider, so `/login tokenrouter` is handled under `Use an API key`.

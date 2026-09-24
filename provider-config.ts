@@ -190,12 +190,25 @@ export function ensureReasoningSplit<T extends ProviderRequestPayload & { reason
     return { ...payload, reasoning_split: true };
 }
 
-export function createTokenRouterProviderConfig(models: TokenRouterProviderModel[]) {
+/**
+ * pi (0.87+) expands `$NAME` in a config value, while omp looks the whole string up as an
+ * env-var name and otherwise sends it verbatim, so `$TOKENROUTER_API_KEY` reaches
+ * TokenRouter as the key itself. Passing a set variable through as its value works in both.
+ * The reference stays the fallback so pi's `/login` and `auth.json` keys still apply.
+ */
+function resolveProviderApiKey(env: Record<string, string | undefined>): string {
+    return env.TOKENROUTER_API_KEY || PROVIDER_API_KEY_ENV;
+}
+
+export function createTokenRouterProviderConfig(
+    models: TokenRouterProviderModel[],
+    env: Record<string, string | undefined> = process.env,
+) {
     return {
         name: PROVIDER_DISPLAY_NAME,
         baseUrl: BASE_URL,
         api: "openai-completions" as const,
-        apiKey: PROVIDER_API_KEY_ENV,
+        apiKey: resolveProviderApiKey(env),
         authHeader: true,
         models: models.map((m) => {
             const thinkingLevelMap = resolveThinkingLevelMap(m.id);
